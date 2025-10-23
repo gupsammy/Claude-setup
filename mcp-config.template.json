@@ -2,84 +2,100 @@
   "mcpServers": {
     "playwright": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"],
-      "env": {},
-      "disabled": true
+      "command": "bunx",
+      "args": ["@playwright/mcp@latest"]
     },
     "brave-search": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
         "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
-      },
-      "disabled": true
+      }
     },
     "hf-mcp-server": {
-      "command": "npx",
+      "command": "bunx",
       "args": [
         "mcp-remote",
         "https://huggingface.co/mcp",
         "--header",
         "Authorization: Bearer YOUR_HF_TOKEN"
-      ],
-      "disabled": true
+      ]
     },
     "Context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"],
-      "disabled": true
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {"CONTEXT7_API_KEY" : "YOUR_CONTEXT7_API_KEY" }
     },
     "exa": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "exa-mcp-server",
-        "--tools=web_search_exa,research_paper_search,company_research,crawling,competitor_finder,linkedin_search,wikipedia_search_exa,github_search"
-      ],
-      "env": {
-        "EXA_API_KEY": "YOUR_EXA_API_KEY"
+      "type" : "http",
+      "url": "https://mcp.exa.ai/mcp?exaApiKey=YOUR_EXA_API_KEY",
+      "headers" :{}
       },
-      "disabled": true
-    },
-    "github": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e",
-        "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_TOKEN"
-      },
-      "disabled": true
-    },
     "XcodeBuildMCP": {
-      "command": "npx",
-      "args": ["-y", "xcodebuildmcp@latest"],
-      "env": {},
-      "disabled": true
+      "command": "bunx",
+      "args": ["-y", "xcodebuildmcp@latest"]
     },
     "deepwiki": {
       "type": "http",
-      "url": "https://mcp.deepwiki.com/mcp",
-      "disabled": true
+      "url": "https://mcp.deepwiki.com/mcp"
     },
     "octocode": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["octocode-mcp"],
       "env": {
         "GITHUB_TOKEN": "YOUR_GITHUB_TOKEN"
-      },
-      "disabled": true
+      }
     },
     "chrome-devtools": {
-      "command": "npx",
-      "args": ["chrome-devtools-mcp@latest"],
-      "disabled": true
+      "command": "bunx",
+      "args": ["chrome-devtools-mcp@latest"]
+    },
+    "vibe-annotations": {
+      "type": "http",
+      "url": "http://127.0.0.1:3846/mcp"
+    },
+    "dataforseo": {
+      "type": "http",
+      "url": "https://mcp.dataforseo.com/http",
+      "headers": {
+        "Authorization": "Basic YOUR_BASE64_ENCODED_CREDENTIALS"
+      }
+    },
+    "reddit-mcp": {
+      "type": "stdio",
+      "command": "/opt/homebrew/bin/uv",
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/your/reddit-mcp-search",
+        "reddit-mcp"
+      ],
+      "env": {
+        "REDDIT_CLIENT_ID": "YOUR_REDDIT_CLIENT_ID",
+        "REDDIT_CLIENT_SECRET": "YOUR_REDDIT_CLIENT_SECRET"
+      }
+    },
+    "firecrawl-mcp": {
+      "type": "http",
+      "url": "https://mcp.firecrawl.dev/YOUR_FIRECRAWL_TOKEN/v2/mcp"
+    },
+    "reddit": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/your/reddit-mcp",
+        "run",
+        "server.py"
+      ],
+      "env": {
+        "REDDIT_CLIENT_ID": "YOUR_REDDIT_CLIENT_ID",
+        "REDDIT_CLIENT_SECRET": "YOUR_REDDIT_CLIENT_SECRET"
+      }
+    },
+    "convex": {
+      "type":"stdio",
+      "command":"bunx",
+      "args":["convex@latest","mcp","start"]
     }
   }
 }
