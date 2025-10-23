@@ -1,0 +1,45 @@
+# Chat History & Session Data
+history.jsonl
+projects/
+session-env/
+shell-snapshots/
+file-history/
+
+# Cache & Temporary Files
+cache/
+debug/
+todos/
+downloads/
+ccnotify/
+
+# Runtime State Files
+security_warnings_state_*.json
+ide/*.lock
+ide/
+
+# Statistics & Telemetry
+statsig/
+
+# Backup Files
+*.backup
+
+# System Files
+.DS_Store
+.anthropic/
+.claude/
+
+# Secrets
+mcp-config.json
+
+# Note: Files that WILL be tracked (configuration you want to preserve):
+# - CLAUDE.md (global instructions)
+# - REPOSITORY_GUIDE.md (documentation)
+# - settings.json (main configuration)
+# - settings.local.json (local overrides)
+# - mcp-config.template.json (MCP configuration template - copy to mcp-config.json and add your tokens)
+# - commands/ (custom slash commands)
+# - agents/ (custom agents)
+# - output-styles/ (custom output styles)
+# - hooks/ (custom hooks)
+# - statusline scripts (statusline-script*.sh)
+# - plugins/ (all plugin content including downloaded repos)
