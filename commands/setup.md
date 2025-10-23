@@ -1,3 +1,8 @@
+---
+argument-hint: [category|server-names]
+description: Setup MCP servers (optional: category or comma-separated server names)
+---
+
 # Setup MCP Servers
 
 Intelligently manages MCP server configurations by comparing master config with existing project setup and allowing selective addition of new MCPs.
@@ -5,8 +10,18 @@ Intelligently manages MCP server configurations by comparing master config with 
 ## Usage
 
 ```
-/setup-mcp
+/setup-mcp                           # Interactive mode
+/setup-mcp research                  # Add all research MCPs
+/setup-mcp seo                       # Add all SEO MCPs
+/setup-mcp frontend                  # Add all frontend MCPs
+/setup-mcp exa,brave-search          # Add specific MCPs (comma-separated)
 ```
+
+## Categories
+
+- **research**: exa, brave-search, reddit-mcp, reddit
+- **seo**: dataforseo, firecrawl-mcp
+- **frontend**: chrome-devtools, vibe-annotations
 
 ## Description
 
@@ -47,6 +62,16 @@ try {
   // No existing config, that's fine
 }
 
+// Define category mappings
+const categories = {
+  research: ["exa", "brave-search", "reddit-mcp", "reddit"],
+  seo: ["dataforseo", "firecrawl-mcp"],
+  frontend: ["chrome-devtools", "vibe-annotations"]
+};
+
+// Get argument from $ARGUMENTS
+const argument = "$ARGUMENTS".trim();
+
 // Find new MCPs that aren't in the existing config
 const masterMcpNames = Object.keys(masterConfig.mcpServers);
 const newMcpNames = masterMcpNames.filter(
@@ -61,31 +86,65 @@ if (newMcpNames.length === 0) {
   Deno.exit(0);
 }
 
-// Ask user which MCPs to add
-console.log(`\n📋 Found ${newMcpNames.length} new MCP(s) available:`);
-newMcpNames.forEach((name, index) => {
-  console.log(`${index + 1}. ${name}`);
-});
-
-console.log("\nWhich MCPs would you like to add?");
-console.log("- Type 'all' to add all new MCPs");
-console.log("- Type specific numbers (e.g., '1,3,5') to add selected MCPs");
-console.log("- Type 'none' to cancel");
-
-const input = prompt("Your choice: ");
-
 let selectedMcps = [];
-if (input === "all") {
-  selectedMcps = [...newMcpNames];
-} else if (input === "none" || !input) {
-  console.log("❌ Operation cancelled.");
-  Deno.exit(0);
+
+// Handle argument-based selection
+if (argument) {
+  // Check if it's a category
+  if (categories[argument]) {
+    selectedMcps = categories[argument].filter(name => newMcpNames.includes(name));
+    if (selectedMcps.length === 0) {
+      console.log(`ℹ️  All MCPs in category '${argument}' are already installed.`);
+      Deno.exit(0);
+    }
+    console.log(`📦 Adding ${selectedMcps.length} MCP(s) from category '${argument}': ${selectedMcps.join(", ")}`);
+  } else {
+    // Treat as comma-separated server names
+    const requestedNames = argument.split(",").map(s => s.trim());
+    selectedMcps = requestedNames.filter(name => {
+      if (!masterMcpNames.includes(name)) {
+        console.log(`⚠️  Warning: '${name}' not found in master config`);
+        return false;
+      }
+      if (existingMcpNames.includes(name)) {
+        console.log(`ℹ️  '${name}' is already installed`);
+        return false;
+      }
+      return true;
+    });
+
+    if (selectedMcps.length === 0) {
+      console.log("❌ No valid MCPs to add.");
+      Deno.exit(0);
+    }
+    console.log(`📦 Adding ${selectedMcps.length} MCP(s): ${selectedMcps.join(", ")}`);
+  }
 } else {
-  // Parse comma-separated numbers
-  const indices = input.split(",").map((s) => parseInt(s.trim()) - 1);
-  selectedMcps = indices
-    .filter((i) => i >= 0 && i < newMcpNames.length)
-    .map((i) => newMcpNames[i]);
+  // Interactive mode - ask user which MCPs to add
+  console.log(`\n📋 Found ${newMcpNames.length} new MCP(s) available:`);
+  newMcpNames.forEach((name, index) => {
+    console.log(`${index + 1}. ${name}`);
+  });
+
+  console.log("\nWhich MCPs would you like to add?");
+  console.log("- Type 'all' to add all new MCPs");
+  console.log("- Type specific numbers (e.g., '1,3,5') to add selected MCPs");
+  console.log("- Type 'none' to cancel");
+
+  const input = prompt("Your choice: ");
+
+  if (input === "all") {
+    selectedMcps = [...newMcpNames];
+  } else if (input === "none" || !input) {
+    console.log("❌ Operation cancelled.");
+    Deno.exit(0);
+  } else {
+    // Parse comma-separated numbers
+    const indices = input.split(",").map((s) => parseInt(s.trim()) - 1);
+    selectedMcps = indices
+      .filter((i) => i >= 0 && i < newMcpNames.length)
+      .map((i) => newMcpNames[i]);
+  }
 }
 
 if (selectedMcps.length === 0) {
