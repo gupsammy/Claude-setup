@@ -27,7 +27,7 @@ statsig/
 .DS_Store
 .anthropic/
 .claude/
-
+./*/.git
 # Secrets
 mcp-config.json
 
