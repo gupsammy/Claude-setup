@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite
+description: Identify and resolve GitHub issues with systematic approach
+argument-hint: [issue-number] - GitHub issue number to fix
+---
+
 # Fix Issue Command
 
 Identify and resolve code issues

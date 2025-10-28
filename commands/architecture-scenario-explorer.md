@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Write, Glob, Grep, AskUserQuestion, TodoWrite, WebSearch, WebFetch
+description: Explore architectural decisions through systematic scenario analysis with trade-off evaluation
+argument-hint: [scenario] - optional architecture scenario to explore
+---
+
 # Architecture Scenario Explorer
 
 Explore architectural decisions through systematic scenario analysis with trade-off evaluation and future-proofing assessment.

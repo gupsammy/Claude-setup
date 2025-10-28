@@ -1,4 +1,10 @@
-# Predictive Code Analysis  
+---
+allowed-tools: Read, Glob, Grep, TodoWrite, AskUserQuestion, Bash
+description: Analyze codebase to predict potential problems before they impact the project
+argument-hint: [code-path] - optional path to analyze
+---
+
+# Predictive Code Analysis
 
 I'll analyze your codebase to predict potential problems before they impact your project.
 

@@ -1,0 +1,3 @@
+[submodule "plugins/marketplaces/anthropic-agent-skills"]
+	path = plugins/marketplaces/anthropic-agent-skills
+	url = https://github.com/anthropics/skills.git

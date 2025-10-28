@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Glob, Grep, WebSearch, WebFetch
+description: Explain code like a senior developer, focusing on the why behind decisions
+argument-hint: [file-path] - optional file to explain
+---
+
 # Senior Developer Explanation
 
 I'll explain this code as a senior developer would, focusing on the why behind decisions.

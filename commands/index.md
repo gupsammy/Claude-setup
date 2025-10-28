@@ -1,3 +1,9 @@
+---
+allowed-tools: Bash
+description: Create or update PROJECT_INDEX.json for current project
+argument-hint: (no arguments)
+---
+
 Execute the PROJECT_INDEX helper script at ~/.claude-code-project-index/scripts/project-index-helper.sh
 
 Usage:

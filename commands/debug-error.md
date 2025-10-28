@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, TodoWrite
+description: Systematically debug and fix errors using comprehensive debugging methodology
+argument-hint: [error-description] - error to debug
+---
+
 # Systematically Debug and Fix Errors
 
 Systematically debug and fix errors

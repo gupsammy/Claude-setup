@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, TodoWrite
+description: Clean up development artifacts while preserving working code
+argument-hint: (no arguments)
+---
+
 # Clean Project
 
 I'll help clean up development artifacts while preserving your working code.

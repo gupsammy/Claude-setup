@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Glob, Grep, Bash, TodoWrite, Write
+description: Perform comprehensive code quality review covering quality, security, performance, and architecture
+argument-hint: [path] - optional path to review
+---
+
 # Comprehensive Code Quality Review
 
 Perform comprehensive code quality review

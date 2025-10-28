@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, TodoWrite
+description: Improve code readability and formatting while preserving exact functionality
+argument-hint: [file-path] - optional file to beautify
+---
+
 # Make It Pretty
 
 I'll improve code readability while preserving exact functionality.

@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
+description: Intelligently refactor and improve code quality with systematic approach
+argument-hint: [code-path] - optional path to refactor
+---
+
 # Intelligently Refactor and Improve Code Quality
 
 Intelligently refactor and improve code quality

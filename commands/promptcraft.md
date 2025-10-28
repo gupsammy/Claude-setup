@@ -1,4 +1,5 @@
 ---
+allowed-tools: Read, Write, Edit, Glob, Grep, WebFetch, TodoWrite, WebSearch
 description: Interactive prompt generator for Claude Code features and general AI prompts with intelligent tool selection and self-evaluation
 argument-hint: [feature-type] [feature-name] - Optional: agent, command, output-style, or leave empty to investigate
 ---
@@ -20,9 +21,9 @@ Determine from user's request whether this is:
 - Generic AI prompt
 
 **For Claude Code features:**
-Execute `/docs <feature-type>` to load current documentation and best practices.
+first always fetch claude /docs <feature-type> to load current documentation and best practices.
 
-**Always ask 3-5 targeted questions** to understand:
+**Always ask 3-5 targeted questions using AskUserQuestion tool** to understand:
 - Primary objective and success criteria
 - Target use cases and constraints
 - Expected inputs/outputs
@@ -44,9 +45,11 @@ Based on prompt requirements, suggest tools:
 - **Grep/Glob**: For code search and navigation
 - **WebSearch/WebFetch**: For research or documentation lookup
 - **Task**: For delegating to subagents
+- SlashCommand, AskUserQuestion, and others.
+- be generous with tool access for the feature, no need to be conservative
 
 Present tool selection with rationale:
-"Selected tools: Read, Grep, Bash(git:*), Bash(pytest:*)
+"Selected tools: Read, Grep, Bash(git:*), Bash(pytest:*), AskUserQuestion
 Rationale: Code analysis requires file reading and search; testing requires git and pytest commands.
 Modify this selection? [show what was excluded and why]"
 

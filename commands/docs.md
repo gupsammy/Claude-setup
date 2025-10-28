@@ -1,3 +1,9 @@
+---
+allowed-tools: Bash
+description: Access Claude Code documentation with auto-updates and freshness checks
+argument-hint: [topic] - optional: topic name, "whats new", or -t flag for freshness check
+---
+
 Execute the Claude Code Docs helper script at ~/.claude-code-docs/claude-docs-helper.sh
 
 Usage:

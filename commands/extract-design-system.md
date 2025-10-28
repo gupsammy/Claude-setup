@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Write, Bash
+description: Extract design system from UI screenshots and create design-system.json
+argument-hint: [screenshot-paths...] - paths to UI screenshots to analyze
+---
+
 **CREATE DESIGN SYSTEM JSON**
 
 UI TO ANALYZE: $ARGUMENTS

@@ -1,3 +1,9 @@
+---
+allowed-tools: Read, Glob, Grep, TodoWrite, Bash
+description: Analyze entire application to understand architecture, patterns, and how everything works
+argument-hint: (no arguments)
+---
+
 # Understand Project
 
 I'll analyze your entire application to understand its architecture, patterns, and how everything works together.

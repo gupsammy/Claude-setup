@@ -1,3 +1,9 @@
+---
+allowed-tools: Bash, Task, Read, TodoWrite, Glob
+description: Execute tasks in parallel using git worktrees and multiple agents
+argument-hint: [task-description] - task to execute in parallel
+---
+
 # Parallel tasks execution
 
 ARGUMENTS: $ARGUMENTS

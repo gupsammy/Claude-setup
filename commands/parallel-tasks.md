@@ -1,3 +1,9 @@
+---
+allowed-tools: Bash
+description: Setup git worktrees for parallel task execution
+argument-hint: (no arguments)
+---
+
 setup a few git worktrees in '.trees' folder depends on number of parallel agents needed, so we can have different sandbox environment for experimentation
 Run `git worktree add .trees/<branch-name>`
 Replace branch-with a good name that reflect the meaning

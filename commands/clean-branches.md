@@ -1,3 +1,9 @@
+---
+allowed-tools: Bash, AskUserQuestion
+description: Clean up merged and stale git branches with safety checks
+argument-hint: [branch-pattern] - optional pattern to filter branches
+---
+
 # Clean Branches Command
 
 Clean up merged and stale git branches
