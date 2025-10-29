@@ -61,8 +61,9 @@
     "commit-commands@claude-code-plugins": false,
     "feature-dev@claude-code-plugins": false,
     "security-guidance@claude-code-plugins": true,
-    "example-skills@anthropic-agent-skills": false,
-    "document-skills@anthropic-agent-skills": false
+    "code-review@claude-code-plugins": true,
+    "document-skills@anthropic-agent-skills": true,
+    "example-skills@anthropic-agent-skills": true
   },
   "alwaysThinkingEnabled": true
 }

@@ -1,3 +1,6 @@
 [submodule "plugins/marketplaces/anthropic-agent-skills"]
 	path = plugins/marketplaces/anthropic-agent-skills
 	url = https://github.com/anthropics/skills.git
+[submodule "plugins/marketplaces/claude-code-plugins"]
+	path = plugins/marketplaces/claude-code-plugins
+	url = https://github.com/anthropics/claude-code.git
