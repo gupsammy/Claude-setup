@@ -21,7 +21,7 @@ Intelligently manages MCP server configurations by comparing master config with 
 
 - **research**: exa, brave-search, reddit-mcp, reddit
 - **seo**: dataforseo, firecrawl-mcp
-- **frontend**: chrome-devtools, vibe-annotations
+- **frontend**: chrome-devtools, vibe-annotations, shadcn
 
 ## Description
 
@@ -66,7 +66,7 @@ try {
 const categories = {
   research: ["exa", "brave-search", "reddit-mcp", "reddit"],
   seo: ["dataforseo", "firecrawl-mcp"],
-  frontend: ["chrome-devtools", "vibe-annotations"]
+  frontend: ["chrome-devtools", "vibe-annotations", "shadcn"]
 };
 
 // Get argument from $ARGUMENTS

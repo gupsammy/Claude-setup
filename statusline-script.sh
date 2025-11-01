@@ -510,11 +510,23 @@ QUARTER_PERCENTAGE=$((DAYS_ELAPSED * 100 / TOTAL_QUARTER_DAYS))
 if [ $QUARTER_PERCENTAGE -gt 100 ]; then QUARTER_PERCENTAGE=100; fi
 if [ $QUARTER_PERCENTAGE -lt 0 ]; then QUARTER_PERCENTAGE=0; fi
 
-# Git branch
+# Git branch and changes count
 GIT_BRANCH="no-git"
+GIT_CHANGES_COUNT=0
 if git rev-parse --git-dir >/dev/null 2>&1; then
   GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
   [ -z "$GIT_BRANCH" ] && GIT_BRANCH="detached"
+
+  # Truncate branch name if too long (max 25 characters)
+  if [ ${#GIT_BRANCH} -gt 25 ]; then
+    GIT_BRANCH="${GIT_BRANCH:0:23}.."
+  fi
+
+  # Count all uncommitted changes (staged + unstaged + untracked)
+  staged_count=$(git diff --cached --name-only 2>/dev/null | wc -l | tr -d ' ')
+  unstaged_count=$(git diff --name-only 2>/dev/null | wc -l | tr -d ' ')
+  untracked_count=$(git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
+  GIT_CHANGES_COUNT=$((staged_count + unstaged_count + untracked_count))
 fi
 
 # Claude info from JSON
@@ -552,21 +564,29 @@ fi
 # Build multi-line status display with new layout
 echo
 
-# Line 1: Model Name | Style Name | Context % + progress bar | Music info (if playing)
+# Line 1: Model Name | Style Name | Context % + progress bar | MCP Status | Music info (if playing)
 LINE1="  ${ACCENT}${BOLD}${MODEL_NAME}${RESET} ${PRIMARY}${OUTPUT_STYLE}${RESET} ${PRIMARY}${CONTEXT_PERCENTAGE}%${RESET} $(create_progress_bar $CONTEXT_PERCENTAGE 15)"
 if [ $CONTEXT_PERCENTAGE -ge 85 ]; then
   LINE1="${LINE1} ${ACCENT}${BOLD}⚠ Run /compact${RESET}"
+fi
+# Add MCP status if available
+if [ -n "$MCP_STATUS" ]; then
+  LINE1="${LINE1} ${ACCENT}${BOLD}🔌 ${MCP_STATUS} enabled${RESET}"
 fi
 # Add music info with better padding
 if [ -n "$SPOTIFY_TRACK" ]; then
   LINE1="${LINE1}    ${ACCENT}${MUSIC_PHRASE}${RESET} ${SECONDARY}${SPOTIFY_TRACK}${RESET} ${MUSIC_EMOJI}"
 fi
 
-# Line 2: Current directory | Git branch | MCP Status
+# Line 2: Current directory | Git branch | Uncommitted changes
 LINE2="  ${SECONDARY}${BOLD}📁${RESET} ${SECONDARY}${CURRENT_DIR}${RESET} ${PRIMARY}${BOLD}⎇${RESET} ${PRIMARY}${GIT_BRANCH}${RESET}"
-# Add MCP status if available
-if [ -n "$MCP_STATUS" ]; then
-  LINE2="${LINE2} ${ACCENT}${BOLD}🔌 ${MCP_STATUS} enabled${RESET}"
+# Add uncommitted changes count if there are any
+if [ $GIT_CHANGES_COUNT -gt 0 ]; then
+  if [ $GIT_CHANGES_COUNT -eq 1 ]; then
+    LINE2="${LINE2} ${ACCENT}${BOLD}${GIT_CHANGES_COUNT} uncommitted change${RESET}"
+  else
+    LINE2="${LINE2} ${ACCENT}${BOLD}${GIT_CHANGES_COUNT} uncommitted changes${RESET}"
+  fi
 fi
 
 # Line 3: Day | Weather | Day % + progress bar | Time | Date | Month | Week | Quarter %
