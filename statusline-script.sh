@@ -510,6 +510,20 @@ QUARTER_PERCENTAGE=$((DAYS_ELAPSED * 100 / TOTAL_QUARTER_DAYS))
 if [ $QUARTER_PERCENTAGE -gt 100 ]; then QUARTER_PERCENTAGE=100; fi
 if [ $QUARTER_PERCENTAGE -lt 0 ]; then QUARTER_PERCENTAGE=0; fi
 
+# Calculate year percentage
+DAY_OF_YEAR=$(date +%j)
+# Remove leading zeros to avoid octal interpretation
+DAY_OF_YEAR=$((10#$DAY_OF_YEAR))
+# Determine if leap year
+if [ $((YEAR % 4)) -eq 0 ] && ([ $((YEAR % 100)) -ne 0 ] || [ $((YEAR % 400)) -eq 0 ]); then
+  TOTAL_YEAR_DAYS=366
+else
+  TOTAL_YEAR_DAYS=365
+fi
+YEAR_PERCENTAGE=$((DAY_OF_YEAR * 100 / TOTAL_YEAR_DAYS))
+if [ $YEAR_PERCENTAGE -gt 100 ]; then YEAR_PERCENTAGE=100; fi
+if [ $YEAR_PERCENTAGE -lt 0 ]; then YEAR_PERCENTAGE=0; fi
+
 # Git branch and changes count
 GIT_BRANCH="no-git"
 GIT_CHANGES_COUNT=0
@@ -589,9 +603,9 @@ if [ $GIT_CHANGES_COUNT -gt 0 ]; then
   fi
 fi
 
-# Line 3: Day | Weather | Day % + progress bar | Time | Date | Month | Week | Quarter %
+# Line 3: Weather | IST Time Day Date Month Week Quarter Year | Quarter % | Year %
 WEEK_NUM=$(date +%U)
-LINE3="  ${PRIMARY}${BOLD}${DAY_NAME}${RESET} ${WEATHER_ICON} ${SECONDARY}${WEATHER_TEMP}${RESET} ${PRIMARY}${DAY_PERCENTAGE}%${RESET} $(create_progress_bar $DAY_PERCENTAGE 10) ${ACCENT}${BOLD}${IST_TIME}${RESET} ${GRAY}${DATE_DD}${RESET} ${GRAY}${MONTH_MON}${RESET} ${GRAY}Week ${WEEK_NUM}${RESET} ${SECONDARY}${QUARTER} ${QUARTER_PERCENTAGE}%${RESET}"
+LINE3="  ${WEATHER_ICON} ${SECONDARY}${WEATHER_TEMP}${RESET} ${PRIMARY}|${RESET} ${ACCENT}${BOLD}${IST_TIME}${RESET} ${PRIMARY}${BOLD}${DAY_NAME}${RESET} ${GRAY}${DATE_DD}${RESET} ${GRAY}${MONTH_MON}${RESET} ${GRAY}${WEEK_NUM}${RESET} ${SECONDARY}${QUARTER} ${YEAR}${RESET} ${PRIMARY}|${RESET} ${SECONDARY}Quarter ${QUARTER_PERCENTAGE}%${RESET} ${PRIMARY}|${RESET} ${SECONDARY}Year ${YEAR_PERCENTAGE}%${RESET}"
 
 # Cave Timer status line
 CAVE_STATUS=""
