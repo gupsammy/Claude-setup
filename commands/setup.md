@@ -21,7 +21,7 @@ Intelligently manages MCP server configurations by comparing master config with 
 
 - **research**: exa, brave-search, reddit-mcp, reddit
 - **seo**: dataforseo, firecrawl-mcp
-- **frontend**: chrome-devtools, vibe-annotations, shadcn
+- **frontend**: chrome-devtools, vibe-annotations, shadcn, next-devtools
 
 ## Description
 
@@ -38,11 +38,13 @@ This command sets up MCP (Model Context Protocol) servers for a project by:
 
 ```javascript
 // Read master MCP configuration from ~/.claude/mcp-config.json
+// Note: readTextFile reads the ENTIRE file content with no line limits
 const homeDir = Deno.env.get("HOME");
 const masterConfigPath = `${homeDir}/.claude/mcp-config.json`;
 
 let masterConfig;
 try {
+  // Reads complete file content regardless of size
   const masterConfigText = await Deno.readTextFile(masterConfigPath);
   masterConfig = JSON.parse(masterConfigText);
 } catch (error) {
@@ -52,9 +54,11 @@ try {
 }
 
 // Check for existing .mcp.json in project
+// Note: readTextFile reads the ENTIRE file content with no line limits
 let existingConfig = { mcpServers: {} };
 let existingMcpNames = [];
 try {
+  // Reads complete file content regardless of size
   const existingConfigText = await Deno.readTextFile(".mcp.json");
   existingConfig = JSON.parse(existingConfigText);
   existingMcpNames = Object.keys(existingConfig.mcpServers || {});
@@ -66,7 +70,7 @@ try {
 const categories = {
   research: ["exa", "brave-search", "reddit-mcp", "reddit"],
   seo: ["dataforseo", "firecrawl-mcp"],
-  frontend: ["chrome-devtools", "vibe-annotations", "shadcn"]
+  frontend: ["chrome-devtools", "vibe-annotations", "shadcn", "next-devtools"]
 };
 
 // Get argument from $ARGUMENTS
