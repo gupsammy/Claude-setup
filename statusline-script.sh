@@ -428,17 +428,20 @@ MUSIC_EMOJI=$(get_music_emoji)
 YEAR=$(date +%Y)
 MONTH=$(date +%m)
 DAY=$(date +%d)
+# Force base-10 interpretation to avoid octal issues with leading zeros
+MONTH=$((10#$MONTH))
+DAY=$((10#$DAY))
 
 case $MONTH in
-01 | 02 | 03)
+1 | 2 | 3)
   QUARTER="Q1"
   QUARTER_START_MONTH=1
   ;;
-04 | 05 | 06)
+4 | 5 | 6)
   QUARTER="Q2"
   QUARTER_START_MONTH=4
   ;;
-07 | 08 | 09)
+7 | 8 | 9)
   QUARTER="Q3"
   QUARTER_START_MONTH=7
   ;;
