@@ -30,6 +30,8 @@ statsig/
 ./*/.git
 # Secrets
 mcp-config.json
+settings.json
+settings.local.json
 
 # Note: Files that WILL be tracked (configuration you want to preserve):
 # - CLAUDE.md (global instructions)

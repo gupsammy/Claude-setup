@@ -509,7 +509,8 @@ esac
 if [ $DAYS_ELAPSED -lt 1 ]; then DAYS_ELAPSED=1; fi
 if [ $DAYS_ELAPSED -gt $TOTAL_QUARTER_DAYS ]; then DAYS_ELAPSED=$TOTAL_QUARTER_DAYS; fi
 
-QUARTER_PERCENTAGE=$((DAYS_ELAPSED * 100 / TOTAL_QUARTER_DAYS))
+QUARTER_PERCENTAGE_DONE=$((DAYS_ELAPSED * 100 / TOTAL_QUARTER_DAYS))
+QUARTER_PERCENTAGE=$((100 - QUARTER_PERCENTAGE_DONE))
 if [ $QUARTER_PERCENTAGE -gt 100 ]; then QUARTER_PERCENTAGE=100; fi
 if [ $QUARTER_PERCENTAGE -lt 0 ]; then QUARTER_PERCENTAGE=0; fi
 
@@ -523,9 +524,61 @@ if [ $((YEAR % 4)) -eq 0 ] && ([ $((YEAR % 100)) -ne 0 ] || [ $((YEAR % 400)) -e
 else
   TOTAL_YEAR_DAYS=365
 fi
-YEAR_PERCENTAGE=$((DAY_OF_YEAR * 100 / TOTAL_YEAR_DAYS))
+YEAR_PERCENTAGE_DONE=$((DAY_OF_YEAR * 100 / TOTAL_YEAR_DAYS))
+YEAR_PERCENTAGE=$((100 - YEAR_PERCENTAGE_DONE))
 if [ $YEAR_PERCENTAGE -gt 100 ]; then YEAR_PERCENTAGE=100; fi
 if [ $YEAR_PERCENTAGE -lt 0 ]; then YEAR_PERCENTAGE=0; fi
+
+# Calculate life percentage remaining
+# Birthday: November 19, 1989
+BIRTH_YEAR=1989
+BIRTH_MONTH=11
+BIRTH_DAY=19
+LIFE_EXPECTANCY_YEARS=80
+
+# Calculate birth date in seconds since epoch
+BIRTH_DATE=$(date -j -f "%Y-%m-%d" "${BIRTH_YEAR}-${BIRTH_MONTH}-${BIRTH_DAY}" "+%s" 2>/dev/null)
+CURRENT_DATE=$(date "+%s")
+
+# Calculate age in days
+AGE_IN_SECONDS=$((CURRENT_DATE - BIRTH_DATE))
+AGE_IN_DAYS=$((AGE_IN_SECONDS / 86400))
+
+# Calculate total life expectancy in days (accounting for leap years: 365.25 days/year average)
+TOTAL_LIFE_DAYS=$((LIFE_EXPECTANCY_YEARS * 36525 / 100))
+
+# Calculate days remaining
+DAYS_REMAINING=$((TOTAL_LIFE_DAYS - AGE_IN_DAYS))
+
+# Calculate percentage remaining
+if [ $DAYS_REMAINING -lt 0 ]; then
+  LIFE_PERCENTAGE_REMAINING=0
+else
+  LIFE_PERCENTAGE_REMAINING=$((DAYS_REMAINING * 100 / TOTAL_LIFE_DAYS))
+fi
+
+if [ $LIFE_PERCENTAGE_REMAINING -gt 100 ]; then LIFE_PERCENTAGE_REMAINING=100; fi
+if [ $LIFE_PERCENTAGE_REMAINING -lt 0 ]; then LIFE_PERCENTAGE_REMAINING=0; fi
+
+# Calculate month percentage
+# Get number of days in current month
+case $MONTH in
+1 | 3 | 5 | 7 | 8 | 10 | 12) DAYS_IN_MONTH=31 ;;
+4 | 6 | 9 | 11) DAYS_IN_MONTH=30 ;;
+2)
+  # Check for leap year
+  if [ $((YEAR % 4)) -eq 0 ] && ([ $((YEAR % 100)) -ne 0 ] || [ $((YEAR % 400)) -eq 0 ]); then
+    DAYS_IN_MONTH=29
+  else
+    DAYS_IN_MONTH=28
+  fi
+  ;;
+esac
+
+MONTH_PERCENTAGE_DONE=$((DAY * 100 / DAYS_IN_MONTH))
+MONTH_PERCENTAGE=$((100 - MONTH_PERCENTAGE_DONE))
+if [ $MONTH_PERCENTAGE -gt 100 ]; then MONTH_PERCENTAGE=100; fi
+if [ $MONTH_PERCENTAGE -lt 0 ]; then MONTH_PERCENTAGE=0; fi
 
 # Git branch and changes count
 GIT_BRANCH="no-git"
@@ -582,9 +635,9 @@ fi
 echo
 
 # Line 1: Model Name | Style Name | Context % + progress bar | MCP Status | Music info (if playing)
-LINE1="  ${ACCENT}${BOLD}${MODEL_NAME}${RESET} ${PRIMARY}${OUTPUT_STYLE}${RESET} ${PRIMARY}${CONTEXT_PERCENTAGE}%${RESET} $(create_progress_bar $CONTEXT_PERCENTAGE 15)"
+LINE1="  ${ACCENT}${BOLD}✨ ${MODEL_NAME}${RESET} ${PRIMARY}🎨 ${OUTPUT_STYLE}${RESET} ${PRIMARY}🧠 ${CONTEXT_PERCENTAGE}%${RESET} $(create_progress_bar $CONTEXT_PERCENTAGE 15)"
 if [ $CONTEXT_PERCENTAGE -ge 85 ]; then
-  LINE1="${LINE1} ${ACCENT}${BOLD}⚠ Run /compact${RESET}"
+  LINE1="${LINE1} ${ACCENT}${BOLD}⚠️ Run /compact${RESET}"
 fi
 # Add MCP status if available
 if [ -n "$MCP_STATUS" ]; then
@@ -596,19 +649,21 @@ if [ -n "$SPOTIFY_TRACK" ]; then
 fi
 
 # Line 2: Current directory | Git branch | Uncommitted changes
-LINE2="  ${SECONDARY}${BOLD}📁${RESET} ${SECONDARY}${CURRENT_DIR}${RESET} ${PRIMARY}${BOLD}⎇${RESET} ${PRIMARY}${GIT_BRANCH}${RESET}"
+LINE2="  ${SECONDARY}${BOLD}📁 ${CURRENT_DIR}${RESET} ${PRIMARY}${BOLD}⎇ ${GIT_BRANCH}${RESET}"
 # Add uncommitted changes count if there are any
 if [ $GIT_CHANGES_COUNT -gt 0 ]; then
   if [ $GIT_CHANGES_COUNT -eq 1 ]; then
-    LINE2="${LINE2} ${ACCENT}${BOLD}${GIT_CHANGES_COUNT} uncommitted change${RESET}"
+    LINE2="${LINE2} ${ACCENT}${BOLD}📝 ${GIT_CHANGES_COUNT} uncommitted change${RESET}"
   else
-    LINE2="${LINE2} ${ACCENT}${BOLD}${GIT_CHANGES_COUNT} uncommitted changes${RESET}"
+    LINE2="${LINE2} ${ACCENT}${BOLD}📝 ${GIT_CHANGES_COUNT} uncommitted changes${RESET}"
   fi
 fi
 
-# Line 3: Weather | IST Time Day Date Month Week Quarter Year | Quarter % | Year %
-WEEK_NUM=$(date +%U)
-LINE3="  ${WEATHER_ICON} ${SECONDARY}${WEATHER_TEMP}${RESET} ${PRIMARY}|${RESET} ${ACCENT}${BOLD}${IST_TIME}${RESET} ${PRIMARY}${BOLD}${DAY_NAME}${RESET} ${GRAY}${DATE_DD}${RESET} ${GRAY}${MONTH_MON}${RESET} ${GRAY}${WEEK_NUM}${RESET} ${SECONDARY}${QUARTER} ${YEAR}${RESET} ${PRIMARY}|${RESET} ${SECONDARY}Quarter ${QUARTER_PERCENTAGE}%${RESET} ${PRIMARY}|${RESET} ${SECONDARY}Year ${YEAR_PERCENTAGE}%${RESET}"
+# Line 3: Weather | IST Time Day Date Month Year
+LINE3="  ${WEATHER_ICON} ${SECONDARY}${WEATHER_TEMP}${RESET} ${PRIMARY}|${RESET} ${ACCENT}${BOLD}⏰ ${IST_TIME}${RESET} ${PRIMARY}${BOLD}📅 ${DAY_NAME}${RESET} ${GRAY}${DATE_DD}${RESET} ${GRAY}${MONTH_MON}${RESET} ${SECONDARY}${YEAR}${RESET}"
+
+# Line 4: Month % | Quarter % | Year % | Life %
+LINE4="  ${PRIMARY}${BOLD}📅 Month ${MONTH_PERCENTAGE}%${RESET} ${GRAY}|${RESET} ${ACCENT}${BOLD}📊 Quarter ${QUARTER_PERCENTAGE}%${RESET} ${GRAY}|${RESET} ${SECONDARY}${BOLD}🗓️ Year ${YEAR_PERCENTAGE}%${RESET} ${GRAY}|${RESET} ${ACCENT}${BOLD}❤️ Life ${LIFE_PERCENTAGE_REMAINING}%${RESET}"
 
 # Cave Timer status line
 CAVE_STATUS=""
@@ -634,6 +689,7 @@ fi
 echo -e "$LINE1"
 echo -e "$LINE2"
 echo -e "$LINE3"
+echo -e "$LINE4"
 
 # Print cave status if active
 if [ -n "$CAVE_STATUS" ]; then
