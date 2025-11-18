@@ -1,84 +1,74 @@
+---
+allowed-tools: Bash, Read, Grep, Glob, AskUserQuestion, Edit
+description: Intelligently analyze and commit changes with smart file detection and validation. Use automatically when user asks to "commit".
+argument-hint: [push] - optionally push after committing
+---
+
 # Smart Git Commit
 
-Analyze the changes and create a meaningful commit message.
+Analyze all uncommitted changes (including untracked files) and create meaningful, well-organized commits.
 
-**Pre-Commit Quality Checks:**
-Before committing, verify:
-- Build passes (if build command exists)
-- Tests pass (if test command exists)
-- Linter passes (if lint command exists)
-- No obvious errors in changed files
+## Process
 
-First, check if this is a git repository
+### 1. Change Discovery
+Detect all uncommitted changes including untracked files. Use `git add -A` to include untracked files, not `git add -u`.
 
-```bash
-# Verify we're in a git repository or initialize one
-if ! git rev-parse --git-dir > /dev/null 2>&1; then
-    echo "Not a git repository. Initializing..."
-    git init
-fi
+### 2. File Classification
+Classify files as production code (commit) or temporary artifacts (exclude). Temporary indicators: `scratch.*`, `temp.*`, `test_output.*`, `debug.*`, `playground.*`, exploratory docs, build outputs, logs, experiments.
 
-# Sync with remote branch if it exists
-if git rev-parse --abbrev-ref --symbolic-full-name @{u} > /dev/null 2>&1; then
-    echo "Syncing with remote branch..."
-    git pull || echo "⚠️  Pull failed, continuing with local changes"
-else
-    echo "No remote tracking branch configured, skipping pull"
-fi
+**For temporary files:** Auto-exclude, suggest `.gitignore` additions, show exclusions with rationale.
 
-# Check if we have changes to commit
-if ! git diff --cached --quiet || ! git diff --quiet; then
-    echo "Changes detected:"
-    git status --short
-else
-    echo "No changes to commit"
-    exit 0
-fi
+### 3. Logical Commit Boundaries
+Analyze production files to detect if changes span multiple logical concerns:
+- Different features or bug fixes
+- Multiple unrelated refactorings
+- Mix of feature code and documentation updates
+- Changes to different subsystems or modules
 
-# Show detailed changes
-git diff --cached --stat
-git diff --stat
-```
+**If multiple concerns detected:**
+- Automatically split into separate commits
+- Group related changes together
+- Create commits in logical order (e.g., refactors before features that depend on them)
 
-Analyze the changes to determine:
-1. What files were modified
-2. The nature of changes (feature, fix, refactor, etc.)
-3. The scope/component affected
+**If single logical concern:**
+- Create one well-crafted commit
 
-If the analysis or commit encounters errors:
-- Explain what went wrong
-- Suggest how to resolve it
-- Ensure no partial commits occur
+### 4. Tech Stack Validation
+Detect project type (Cargo.toml=Rust, package.json=JS/TS, pyproject.toml=Python, *.swift=Swift, go.mod=Go) and run appropriate checks:
+- **Rust**: fmt, clippy, test, build
+- **JS/TS**: lint, test, build (via bun/pnpm)
+- **Python**: black, ruff, pytest
+- **Swift**: swiftformat, test, build
+- **Go**: fmt, vet, test, build
 
-```bash
-# If nothing is staged, stage modified files (not untracked)
-if git diff --cached --quiet; then
-    echo "No files staged. Staging modified files..."
-    git add -u
-fi
+Skip checks gracefully if tools unavailable. If checks fail, report clearly and abort commit.
 
-# Show what will be committed
-git diff --cached --name-status
-```
+### 5. Commit Message Creation
+For each commit, create a conventional commit message:
+- **Type**: feat, fix, docs, style, refactor, test, chore, perf
+- **Scope**: Component or area affected (optional but encouraged)
+- **Subject**: Clear, present-tense description
+- **Body**: Additional context if needed (why the change was made)
 
-Based on the analysis, create a conventional commit message:
-- **Type**: feat|fix|docs|style|refactor|test|chore
-- **Scope**: component or area affected (optional)
-- **Subject**: clear description in present tense
-- **Body**: why the change was made (if needed)
+Analyze recent commits (`git log --oneline -10`) to match the project's style and conventions.
 
-```bash
-# Create the commit with the analyzed message
-# Example: git commit -m "fix(auth): resolve login timeout issue"
-```
+**Critical constraints:**
+- Never add "Co-authored-by" or any Claude/AI signatures
+- Never include "Generated with Claude Code" or similar attribution
+- Never use emojis in commit messages
+- Use only the existing git user configuration
 
-The commit message should be concise, meaningful, and follow the project's conventions detected from recent commits.
+### 6. Push Handling
+**If ARGUMENTS contains "push":**
+- After all commits succeed, push to remote with `git push`
 
-**Important**: Never:
-- Add "Co-authored-by" or any Claude signatures
-- Include "Generated with Claude Code" or similar messages
-- Modify git config or user credentials
-- Add any AI/assistant attribution to the commit
-- Use emojis in commits, PRs, or git-related content
+**Otherwise:**
+- Commit locally only, do not push
 
-Use only the existing git user configuration, maintaining full ownership and authenticity of commits.
+## Key Implementation Details
+
+**Use `git add -A`** to stage both modified and untracked files (not `git add -u` which ignores untracked files).
+
+When creating commits, ensure they are atomic and focused. Each commit should represent one logical change that could be reverted independently.
+
+Show clear progress as you work through classification, validation, and commit creation.
