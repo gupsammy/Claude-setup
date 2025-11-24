@@ -32,6 +32,7 @@ statsig/
 mcp-config.json
 settings.json
 settings.local.json
+.learn
 
 # Note: Files that WILL be tracked (configuration you want to preserve):
 # - CLAUDE.md (global instructions)
