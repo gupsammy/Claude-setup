@@ -1,8 +1,7 @@
 ---
 allowed-tools: Bash, SlashCommand, AskUserQuestion
-description: Push commits and create/update pull request with smart branch management. Use automatically when user asks to "push pr"
+description: Push commits and create/update pull request with smart branch management.
 argument-hint: [status] [base-branch] - status: 1=opened, 2=draft, 3=ready; base-branch defaults to main
-model: claude-sonnet-4-5-20250929
 ---
 
 # Smart Push & PR

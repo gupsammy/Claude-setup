@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash, Read, Grep, Glob, AskUserQuestion, Edit
-description: Intelligently analyze and commit changes with smart file detection and validation. Use automatically when user asks to "commit".
+description: Intelligently analyze and commit changes with smart file detection and validation.
 argument-hint: [push] - optionally push after committing
 ---
 

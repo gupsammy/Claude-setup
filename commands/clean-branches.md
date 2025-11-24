@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, AskUserQuestion
+allowed-tools: Bash
 description: Clean up merged and stale git branches with safety checks
 argument-hint: [branch-pattern] - optional pattern to filter branches
 ---
