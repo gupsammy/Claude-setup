@@ -26,20 +26,32 @@ Do NOT use when:
 3. **Vocabulary First**: Build expert lexicon for better understanding and prompting
 4. **Practical Bias**: Optimize for applicable knowledge over comprehensive coverage
 
-## State Management - .learn Directory
+## State Management - Global ~/.learn Directory
 
-All learning artifacts are saved in `.learn/[topic-slug]/`:
+All learning artifacts are saved globally in `~/.learn/[topic-slug]/`:
 
 ```
-.learn/
+~/.learn/
 ├── react/
 │   ├── plan.md              # Learning plan (all modes)
 │   ├── progress.json        # State tracking (interactive/minimalist)
 │   ├── vocabulary.md        # Dependency-sequenced vocab
-│   └── notes.md            # User's learning notes (optional)
+│   ├── notes.md            # User's learning notes (optional)
+│   └── apps/               # Interactive app prompts (interactive/minimalist)
+│       ├── components.md
+│       ├── hooks.md
+│       └── state-management.md
+├── rust/
+│   ├── plan.md
+│   ├── progress.json
+│   ├── vocabulary.md
+│   └── apps/
+│       └── ownership.md
 ```
 
-Create `.learn/` directory on first use if it doesn't exist. Use topic slug (lowercase, hyphens) for subdirectory.
+**Benefits**: Learning state persists across all projects. Can continue learning from any directory.
+
+**Setup**: Create `~/.learn/` directory on first use if it doesn't exist. Use topic slug (lowercase, hyphens) for subdirectory names.
 
 ## Three Output Modes
 
@@ -49,7 +61,7 @@ Create `.learn/` directory on first use if it doesn't exist. Use topic slug (low
 - **Delivery**: Save complete `plan.md` with detailed 20% starter pack and full roadmap
 - **State**: No progress tracking needed
 - **Best for**: Self-directed learners who want complete picture upfront
-- **Artifacts**: `.learn/[topic]/plan.md` only
+- **Artifacts**: `~/.learn/[topic]/plan.md` only
 
 ### Interactive Guide
 - **Delivery**: Present one concept at a time, validate understanding before progressing
@@ -67,7 +79,7 @@ Create `.learn/` directory on first use if it doesn't exist. Use topic slug (low
 
 ## Resuming Existing Learning
 
-Before starting new learning plan, check if `.learn/[topic-slug]/` exists:
+Before starting new learning plan, check if `~/.learn/[topic-slug]/` exists:
 
 **If exists**:
 1. Read `progress.json` to check mode and current state
@@ -79,7 +91,7 @@ Before starting new learning plan, check if `.learn/[topic-slug]/` exists:
 - Reference what they've already learned when presenting new material
 
 **If starting fresh**:
-- Archive old directory to `.learn/[topic]-archive-[timestamp]/`
+- Archive old directory to `~/.learn/[topic]-archive-[timestamp]/`
 - Proceed with new learning plan
 
 **If reviewing progress**:
@@ -199,13 +211,134 @@ Dependencies: [terms you need to know first, if any]
 
 **For Comprehensive mode**: Present full sequenced vocabulary list in plan.md.
 
-**Save to**: `.learn/[topic]/vocabulary.md` with dependency indicators.
+**Save to**: `~/.learn/[topic]/vocabulary.md` with dependency indicators.
 
-### Step 6: Generate Output
+### Step 6: Generate Interactive App Prompts (When Beneficial)
+
+For Interactive and Minimalist modes, generate creative app prompts for concepts where hands-on practice significantly enhances learning.
+
+**When to generate app prompts:**
+- Visual/spatial concepts (UI components, layouts, animations, data structures)
+- Algorithmic concepts (sorting, searching, recursion, state machines)
+- Interactive patterns (event handling, state management, user flows)
+- Abstract concepts that benefit from visualization (closures, async, memory management)
+- **Skip for**: Pure theory, historical context, simple definitions, tool installation
+
+**App Design Principles:**
+
+Generate fully custom app ideas that maximize learning through interaction. Consider:
+
+1. **Active Learning**: User manipulates, builds, or experiments (not just reads/watches)
+2. **Immediate Feedback**: Visual/interactive responses show concept in action
+3. **Progressive Complexity**: Start simple, allow exploration of edge cases
+4. **Concept Isolation**: Focus on one core concept, avoid overwhelming with related topics
+5. **Playful Discovery**: Make it fun - games, challenges, creative tools over dry drills
+
+**Creative App Types** (examples, not templates):
+- **Builders**: "Build your own X" - construct the concept from components
+- **Simulators**: Interactive simulation showing concept behavior
+- **Visualizers**: Animate or visualize abstract concepts in real-time
+- **Playgrounds**: Sandbox for experimentation with instant visual feedback
+- **Games**: Gamified learning (e.g., "sort the array faster", "catch the bug")
+- **Explorers**: Interactive documentation where user explores concept space
+- **Challenges**: Puzzle/problem-solving that requires applying the concept
+
+**Prompt Generation Process:**
+
+For each concept needing an app:
+
+1. **Identify core learning goal**: What should user viscerally understand after using this app?
+2. **Design interaction**: How will user interact? What will they build/manipulate/explore?
+3. **Determine requirements**: Need image generation? LLM for dynamic content? Neither?
+4. **Write concise prompt** (50-150 words):
+   - App name and core idea
+   - What user does (interaction model)
+   - What they learn through interaction
+   - Tech requirements: "Requires: Image generation" or "Requires: LLM for dynamic examples" or "Static interactive UI only"
+
+**Prompt Format:**
+
+```markdown
+### Interactive Learning App: [Concept Name]
+
+**App Idea**: [Creative name - 2-4 words]
+
+[2-3 sentence description of the app and what user does]
+
+**Learning Goal**: [What concept becomes clear through interaction]
+
+**Requirements**: [Image generation / LLM / Neither - just interactive UI]
+
+**Google AI Studio Prompt**:
+---
+[Concise 50-150 word prompt describing the app to build]
+---
+```
+
+**Examples:**
+
+For "React Components":
+```
+**App Idea**: Component Constructor
+
+Build React components by dragging visual elements and see the JSX code generate in real-time. Click components to see props, modify values to see re-renders. Break things intentionally to understand component boundaries.
+
+**Learning Goal**: Understand component composition, props flow, and re-rendering through visual manipulation.
+
+**Requirements**: Static interactive UI only
+
+**Google AI Studio Prompt**:
+---
+Create an interactive web app where users build React components visually. Left side: drag-and-drop elements (button, input, div, text). Right side: live JSX code generation. Users can click any component to edit props, see how changes propagate. Include a "break it" button that introduces common mistakes (missing keys, wrong prop types) to learn debugging. Real-time visual updates as they build. Make it playful and colorful.
+---
+```
+
+For "Sorting Algorithms":
+```
+**App Idea**: Sort Race Visualizer
+
+Watch different sorting algorithms compete in real-time with animated array bars. Adjust speed, array size, and initial order. See comparison counts and swaps. Predict which algorithm wins for different data patterns.
+
+**Learning Goal**: Intuitively understand algorithm performance through visual competition.
+
+**Requirements**: Static interactive UI only
+
+**Google AI Studio Prompt**:
+---
+Build a sorting algorithm race visualizer. Show 3-4 algorithms (bubble, quick, merge, insertion) running simultaneously on the same array, represented as colored bars. Animate every comparison and swap with smooth transitions. Controls: speed slider, array size, initial order (random, sorted, reversed). Display live stats: comparisons, swaps, time. Add "race mode" where algorithms compete. Make it feel like a game with exciting animations and sound effects (optional). Users discover performance patterns through play.
+---
+```
+
+For "JavaScript Closures":
+```
+**App Idea**: Closure Factory Explorer
+
+Create functions that "remember" values. Build closures by locking in variables, then invoke them with different inputs to see which data persists vs changes. Visual memory boxes show captured scope.
+
+**Learning Goal**: Understand lexical scope and variable capture through interactive function building.
+
+**Requirements**: LLM for dynamic code generation and explanations
+
+**Google AI Studio Prompt**:
+---
+Create an interactive closure explorer. Users write simple functions that capture variables from outer scope. App shows visual "memory boxes" representing scopes - outer and inner. When function is invoked, highlight which variables come from where. Generate diverse examples on-demand using an LLM (simple counter, event handlers, private data patterns). Let users modify code and see scope visualization update. Explain closure behavior in plain language as they experiment. Make the invisible visible.
+---
+```
+
+**Storage and Delivery:**
+
+1. Save app prompt to `~/.learn/[topic]/apps/[concept-slug].md`
+2. Display inline in conversation when presenting the concept
+3. Treat as optional supplementary material (don't gate progress)
+
+**In Interactive Mode**: Show app prompt after presenting resource, before understanding check
+**In Minimalist Mode**: Show app prompt with the resource link and vocabulary
+
+### Step 7: Generate Output
 
 #### Mode 1: Comprehensive Plan
 
-Save to `.learn/[topic]/plan.md` with structure:
+Save to `~/.learn/[topic]/plan.md` with structure:
 
 ```markdown
 # Learning Plan: [Topic]
@@ -242,7 +375,7 @@ After saving: Confirm location, summarize 20%, encourage action.
 #### Mode 2: Interactive Guide
 
 **Initial Setup**:
-1. Create `.learn/[topic]/` directory
+1. Create `~/.learn/[topic]/` directory
 2. Save `plan.md` with full learning plan (for reference)
 3. Save `vocabulary.md` with dependency-sequenced terms
 4. Initialize `progress.json`:
@@ -284,9 +417,16 @@ After saving: Confirm location, summarize 20%, encourage action.
 Why this resource: [What makes it valuable]
 Time: [Estimate]
 
+[If concept benefits from interactive app, display app prompt here:]
+
+**🎮 Interactive Learning App**: [App Name]
+[Description and learning goal]
+[Google AI Studio prompt in code block]
+Saved to: ~/.learn/react/apps/components.md
+
 **After completing**: Return and I'll check your understanding before moving to JSX.
 
-Progress saved to: .learn/react/progress.json
+Progress saved to: ~/.learn/react/progress.json
 ```
 
 **When user returns** - Check understanding:
@@ -321,7 +461,7 @@ Quick check:
 #### Mode 3: Minimalist Just-In-Time
 
 **Initial Setup**:
-1. Create `.learn/[topic]/` directory
+1. Create `~/.learn/[topic]/` directory
 2. Save minimal `plan.md` (just concept list + brief descriptions)
 3. Save `vocabulary.md` with dependency-sequenced terms
 4. Initialize `progress.json` (same structure as Interactive mode)
@@ -341,9 +481,15 @@ Key terms to understand:
 - **Render**: [Definition]
   Dependencies: Component
 
+[If concept benefits from interactive app:]
+
+🎮 Optional Interactive App: [App Name]
+[Google AI Studio prompt - concise version]
+Full prompt saved: ~/.learn/react/apps/components.md
+
 Return when done for the next step.
 
-Progress: .learn/react/progress.json
+Progress: ~/.learn/react/progress.json
 ```
 
 **When user returns** - Brief check + next step:

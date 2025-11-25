@@ -16,6 +16,7 @@ ccnotify/
 security_warnings_state_*.json
 ide/*.lock
 ide/
+plans/
 
 # Statistics & Telemetry
 statsig/
