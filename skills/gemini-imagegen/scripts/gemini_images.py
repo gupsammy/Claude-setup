@@ -21,6 +21,7 @@ from typing import Literal
 from PIL import Image
 from google import genai
 from google.genai import types
+from gemini_utils import extract_image_and_text
 
 
 AspectRatio = Literal["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"]
@@ -53,22 +54,25 @@ class GeminiImageGenerator:
         aspect_ratio: AspectRatio | None = None,
         image_size: ImageSize | None = None,
         google_search: bool = False,
+        model: Model | None = None,
     ) -> types.GenerateContentConfig:
         """Build generation config."""
         kwargs = {"response_modalities": ["TEXT", "IMAGE"]}
-        
-        img_config = {}
-        if aspect_ratio:
-            img_config["aspect_ratio"] = aspect_ratio
-        if image_size:
-            img_config["image_size"] = image_size
-        
-        if img_config:
-            kwargs["image_config"] = types.ImageConfig(**img_config)
-        
+
+        # image_config only works with gemini-3-pro-image-preview
+        if (model or self.model) and "pro" in (model or self.model).lower():
+            img_config = {}
+            if aspect_ratio:
+                img_config["aspectRatio"] = aspect_ratio  # camelCase!
+            if image_size:
+                img_config["imageSize"] = image_size  # camelCase!
+
+            if img_config:
+                kwargs["image_config"] = types.ImageConfig(**img_config)
+
         if google_search:
             kwargs["tools"] = [{"google_search": {}}]
-        
+
         return types.GenerateContentConfig(**kwargs)
     
     def generate(
@@ -95,21 +99,19 @@ class GeminiImageGenerator:
             Tuple of (output path, optional text response)
         """
         output = Path(output)
-        config = self._build_config(aspect_ratio, image_size, google_search)
-        
+        config = self._build_config(aspect_ratio, image_size, google_search, model)
+
         response = self.client.models.generate_content(
             model=model or self.model,
             contents=[prompt],
             config=config,
         )
-        
-        text = None
-        for part in response.parts:
-            if part.text:
-                text = part.text
-            elif part.inline_data:
-                part.as_image().save(output)
-        
+
+        image, text = extract_image_and_text(response)
+
+        if image:
+            image.save(output)
+
         return output, text
     
     def edit(
@@ -139,22 +141,20 @@ class GeminiImageGenerator:
         
         if isinstance(input_image, (str, Path)):
             input_image = Image.open(input_image)
-        
-        config = self._build_config(aspect_ratio, image_size)
-        
+
+        config = self._build_config(aspect_ratio, image_size, model=model)
+
         response = self.client.models.generate_content(
             model=model or self.model,
             contents=[instruction, input_image],
             config=config,
         )
-        
-        text = None
-        for part in response.parts:
-            if part.text:
-                text = part.text
-            elif part.inline_data:
-                part.as_image().save(output)
-        
+
+        image, text = extract_image_and_text(response)
+
+        if image:
+            image.save(output)
+
         return output, text
     
     def compose(
@@ -189,23 +189,21 @@ class GeminiImageGenerator:
                 loaded.append(Image.open(img))
             else:
                 loaded.append(img)
-        
-        config = self._build_config(aspect_ratio, image_size)
+
+        config = self._build_config(aspect_ratio, image_size, model=model or self.PRO)
         contents = [instruction] + loaded
-        
+
         response = self.client.models.generate_content(
             model=model or self.PRO,  # Pro recommended for composition
             contents=contents,
             config=config,
         )
-        
-        text = None
-        for part in response.parts:
-            if part.text:
-                text = part.text
-            elif part.inline_data:
-                part.as_image().save(output)
-        
+
+        image, text = extract_image_and_text(response)
+
+        if image:
+            image.save(output)
+
         return output, text
     
     def chat(self) -> "ImageChat":
@@ -242,16 +240,12 @@ class ImageChat:
             contents.append(image)
         
         response = self._chat.send_message(contents)
-        
-        text = None
-        img = None
-        for part in response.parts:
-            if part.text:
-                text = part.text
-            elif part.inline_data:
-                img = part.as_image()
-                self.current_image = img
-        
+
+        img, text = extract_image_and_text(response)
+
+        if img:
+            self.current_image = img
+
         return img, text
     
     def reset(self):

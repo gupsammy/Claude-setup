@@ -21,6 +21,7 @@ import sys
 from PIL import Image
 from google import genai
 from google.genai import types
+from gemini_utils import extract_image_and_text, save_prompt_log
 
 
 def edit_image(
@@ -58,16 +59,16 @@ def edit_image(
     
     # Build config
     config_kwargs = {"response_modalities": ["TEXT", "IMAGE"]}
-    
-    image_config_kwargs = {}
-    if aspect_ratio:
-        image_config_kwargs["aspect_ratio"] = aspect_ratio
-    if image_size:
-        image_config_kwargs["image_size"] = image_size
-    
-    if image_config_kwargs:
+
+    # image_config only works with gemini-3-pro-image-preview
+    if "pro" in model.lower() and (aspect_ratio or image_size):
+        image_config_kwargs = {}
+        if aspect_ratio:
+            image_config_kwargs["aspectRatio"] = aspect_ratio  # camelCase!
+        if image_size:
+            image_config_kwargs["imageSize"] = image_size  # camelCase!
         config_kwargs["image_config"] = types.ImageConfig(**image_config_kwargs)
-    
+
     config = types.GenerateContentConfig(**config_kwargs)
     
     response = client.models.generate_content(
@@ -76,20 +77,13 @@ def edit_image(
         config=config,
     )
     
-    text_response = None
-    image_saved = False
-    
-    for part in response.parts:
-        if part.text is not None:
-            text_response = part.text
-        elif part.inline_data is not None:
-            image = part.as_image()
-            image.save(output_path)
-            image_saved = True
-    
-    if not image_saved:
+    image, text_response = extract_image_and_text(response)
+
+    if not image:
         raise RuntimeError("No image was generated. Check your instruction and try again.")
-    
+
+    image.save(output_path)
+    save_prompt_log(output_path, instruction, source_images=[input_path])
     return text_response
 
 

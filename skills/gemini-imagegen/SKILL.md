@@ -3,174 +3,215 @@ name: gemini-imagegen
 description: Generate and edit images using the Gemini API (Nano Banana). Use this skill when creating images from text prompts, editing existing images, applying style transfers, generating logos with text, creating stickers, product mockups, or any image generation/manipulation task. Supports text-to-image, image editing, multi-turn refinement, and composition from multiple reference images.
 ---
 
-# Gemini Image Generation (Nano Banana)
+# Gemini Image Generation
 
-Generate and edit images using Google's Gemini API. The environment variable `GEMINI_API_KEY` must be set.
+Generate and edit images using Google's Gemini API. Requires `GEMINI_API_KEY` environment variable.
 
-## Available Models
+## Default Output & Logging
 
-| Model | Alias | Resolution | Best For |
-|-------|-------|------------|----------|
-| `gemini-2.5-flash-image` | Nano Banana | 1024px | Speed, high-volume tasks |
-| `gemini-3-pro-image-preview` | Nano Banana Pro | Up to 4K | Professional assets, complex instructions, text rendering |
-
-## Quick Start Scripts
-
-### Text-to-Image
-```bash
-python scripts/generate_image.py "A cat wearing a wizard hat" output.png
+When the user doesn't specify a location, save images to:
+```
+/Users/samarthgupta/Documents/generated images/
 ```
 
-### Edit Existing Image
-```bash
-python scripts/edit_image.py input.png "Add a rainbow in the background" output.png
+Every generated image gets a companion `.md` file with the prompt used (e.g., `logo.png` → `logo.md`).
+
+When gathering parameters (aspect ratio, resolution), offer the option to specify a custom output location.
+
+---
+
+## Core Prompting Principle
+
+**Describe scenes narratively, don't list keywords.** Gemini has deep language understanding—write prompts like prose, not tags.
+
+```
+❌ "cat, wizard hat, magical, fantasy, 4k, detailed"
+
+✓ "A fluffy orange tabby sits regally on a velvet cushion, wearing an ornate
+   purple wizard hat embroidered with silver stars. Soft candlelight illuminates
+   the scene from the left. The mood is whimsical yet dignified."
 ```
 
-### Multi-Turn Chat (Iterative Refinement)
-```bash
-python scripts/multi_turn_chat.py
+### The Formula
+
 ```
+[Subject + Adjectives] doing [Action] in [Location/Context].
+[Composition/Camera]. [Lighting/Atmosphere]. [Style/Media]. [Constraint].
+```
+
+Not every prompt needs every element—match detail to intent.
+
+### Prescriptive vs Open Prompting
+
+**Prescriptive** (user has specific vision): Detailed descriptions, exact specifications
+**Open** (exploring/want model creativity): General direction, let model decide details
+
+Both are valid. Ask the user's intent if unclear.
+
+---
+
+## Capability Patterns
+
+### Photorealistic Scenes
+Think like a photographer: describe lens, light, moment.
+- Specify camera (85mm portrait, 24mm wide), aperture (f/1.8 bokeh, f/11 sharp throughout)
+- Describe lighting direction and quality (golden hour from camera-left, three-point softbox)
+- Include mood and format (serene, vertical portrait)
+
+### Product Photography
+- **Isolation**: Clean white backdrop, soft even lighting, e-commerce ready
+- **Lifestyle**: Product in use context, natural setting, aspirational but authentic
+- **Hero shots**: Cinematic framing, dramatic lighting, space for text overlay
+
+### Logos & Text (Use Pro Model)
+- Put text in quotes: `'Morning Brew Coffee Co'`
+- Describe typography: "clean bold sans-serif with generous letter-spacing"
+- Specify color scheme, shape constraints, design intent
+- Iterate with multi-turn chat for refinement
+
+### Stylized Illustration
+- Name the style: "kawaii-style sticker", "anime-influenced", "vintage travel poster"
+- Describe design language: "bold outlines, flat colors, cel-shading"
+- Include format constraints: "white background", "die-cut sticker format"
+
+### Editing Images
+- **Acknowledge subject**: "Using the provided image of my cat..."
+- **Explicit preservation**: "Keep everything unchanged except..."
+- **Realistic integration**: "should look naturally printed on the fabric"
+
+Pattern: Acknowledge → specify change → describe integration → preserve the rest
+
+### Multi-Image Composition (Pro Model)
+- State output goal first
+- Assign elements: "Take X from first image, Y from second"
+- Describe integration requirements (lighting match, realistic shadows)
+- Supports up to 14 reference images
+
+### Character Consistency
+- Use multi-turn chat session for multiple views
+- Reference distinctive features explicitly in follow-ups
+- Include "exact same character" or "maintain all design details"
+- Save successful designs as reference for future prompts
+
+---
+
+## Invoking Aesthetics Through Naming
+
+Names invoke aesthetics. The model learned associations for film stocks, cameras, studios, artists, and styles. Instead of describing characteristics, reference the name directly.
+
+```
+"Portrait at golden hour, shot on Kodak Portra 400"
+→ Warm skin tones, pastel highlights, fine grain
+
+"Studio Ghibli forest scene"
+→ Lush nature, soft lighting, whimsical atmosphere
+
+"Fashion editorial, Hasselblad medium format"
+→ Exceptional detail, shallow DOF, that medium format look
+```
+
+This works for photography, animation, illustration, game art, graphic design, fine art—anything with a recognizable visual identity.
+
+**See [STYLE_REFERENCE.md](STYLE_REFERENCE.md) for comprehensive lexicon of film stocks, cameras, studios, artists, and styles.**
+
+---
+
+## Models
+
+| Model | Best For |
+|-------|----------|
+| `gemini-2.5-flash-image` | Speed, iteration, simple generation (1024px fixed) |
+| `gemini-3-pro-image-preview` | Text rendering, complex instructions, high-res (up to 4K), multi-image composition, Google Search grounding |
+
+**Defaults**: Pro model uses 1K resolution, 1:1 aspect. Confirm with user before changing.
+
+### Image Configuration (Pro Only)
+
+**Aspect ratios**: 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
+**Resolutions**: 1K (~1024px), 2K (~2048px), 4K (~4096px)
+
+---
+
+## Advanced Features
+
+### Google Search Grounding (Pro Only)
+Enable with `--grounding` flag when real-time data helps:
+- Weather visualizations
+- Current events infographics
+- Real-world data charts
+
+### Multi-Turn Refinement
+Use chat for iterative editing instead of perfecting prompts in one shot:
+```
+→ "Create a logo for Acme Corp"
+→ "Make the text bolder"
+→ "Add a blue gradient background"
+```
+
+### Semantic Masking
+No manual masking needed. Describe changes conversationally:
+- "Change the sofa to red leather"
+- "Replace the background with a sunset beach"
+- "Remove the power lines from the sky"
+
+---
+
+## Scripts
+
+```bash
+# Generate from prompt
+python scripts/generate_image.py "prompt" output.png [--model MODEL] [--aspect RATIO] [--size SIZE] [--grounding]
+
+# Edit existing image
+python scripts/edit_image.py input.png "instruction" output.png [--model MODEL] [--aspect RATIO] [--size SIZE]
+
+# Compose multiple images
+python scripts/compose_images.py "instruction" output.png img1.png [img2.png ...] [--model MODEL] [--aspect RATIO] [--size SIZE]
+
+# Interactive multi-turn chat
+python scripts/multi_turn_chat.py [--model MODEL] [--output-dir DIR]
+```
+
+Models: `gemini-2.5-flash-image` (default), `gemini-3-pro-image-preview`
+
+---
 
 ## Core API Pattern
 
-All image generation uses the `generateContent` endpoint with `responseModalities: ["TEXT", "IMAGE"]`:
-
 ```python
-import os
-import base64
 from google import genai
+from google.genai import types
 
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 response = client.models.generate_content(
     model="gemini-2.5-flash-image",
-    contents=["Your prompt here"],
+    contents=["Your narrative prompt here"],
+    config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"])
 )
 
 for part in response.parts:
-    if part.text:
-        print(part.text)
-    elif part.inline_data:
-        image = part.as_image()
-        image.save("output.png")
+    if part.inline_data:
+        # Save image from part.inline_data.data
 ```
 
-## Image Configuration Options
-
-Control output with `image_config`:
-
+For Pro model with configuration:
 ```python
-from google.genai import types
-
-response = client.models.generate_content(
-    model="gemini-3-pro-image-preview",
-    contents=[prompt],
-    config=types.GenerateContentConfig(
-        response_modalities=['TEXT', 'IMAGE'],
-        image_config=types.ImageConfig(
-            aspect_ratio="16:9",  # 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
-            image_size="2K"       # 1K, 2K, 4K (Pro only for 4K)
-        ),
-    )
+config=types.GenerateContentConfig(
+    response_modalities=['TEXT', 'IMAGE'],
+    image_config=types.ImageConfig(aspectRatio="16:9", imageSize="2K"),
+    tools=[{"google_search": {}}]  # Optional grounding
 )
 ```
 
-## Editing Images
+---
 
-Pass existing images with text prompts:
+## Quick Checklist
 
-```python
-from PIL import Image
-
-img = Image.open("input.png")
-response = client.models.generate_content(
-    model="gemini-2.5-flash-image",
-    contents=["Add a sunset to this scene", img],
-)
-```
-
-## Multi-Turn Refinement
-
-Use chat for iterative editing:
-
-```python
-from google.genai import types
-
-chat = client.chats.create(
-    model="gemini-2.5-flash-image",
-    config=types.GenerateContentConfig(response_modalities=['TEXT', 'IMAGE'])
-)
-
-response = chat.send_message("Create a logo for 'Acme Corp'")
-# Save first image...
-
-response = chat.send_message("Make the text bolder and add a blue gradient")
-# Save refined image...
-```
-
-## Prompting Best Practices
-
-### Photorealistic Scenes
-Include camera details: lens type, lighting, angle, mood.
-> "A photorealistic close-up portrait, 85mm lens, soft golden hour light, shallow depth of field"
-
-### Stylized Art
-Specify style explicitly:
-> "A kawaii-style sticker of a happy red panda, bold outlines, cel-shading, white background"
-
-### Text in Images
-Be explicit about font style and placement. Use `gemini-3-pro-image-preview` for best results:
-> "Create a logo with text 'Daily Grind' in clean sans-serif, black and white, coffee bean motif"
-
-### Product Mockups
-Describe lighting setup and surface:
-> "Studio-lit product photo on polished concrete, three-point softbox setup, 45-degree angle"
-
-## Advanced Features (Pro Model Only)
-
-### Google Search Grounding
-Generate images based on real-time data:
-
-```python
-response = client.models.generate_content(
-    model="gemini-3-pro-image-preview",
-    contents=["Visualize today's weather in Tokyo as an infographic"],
-    config=types.GenerateContentConfig(
-        response_modalities=['TEXT', 'IMAGE'],
-        tools=[{"google_search": {}}]
-    )
-)
-```
-
-### Multiple Reference Images (Up to 14)
-Combine elements from multiple sources:
-
-```python
-response = client.models.generate_content(
-    model="gemini-3-pro-image-preview",
-    contents=[
-        "Create a group photo of these people in an office",
-        Image.open("person1.png"),
-        Image.open("person2.png"),
-        Image.open("person3.png"),
-    ],
-)
-```
-
-## REST API (curl)
-
-```bash
-curl -s -X POST \
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent" \
-  -H "x-goog-api-key: $GEMINI_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "contents": [{"parts": [{"text": "A serene mountain landscape"}]}]
-  }' | jq -r '.candidates[0].content.parts[] | select(.inlineData) | .inlineData.data' | base64 --decode > output.png
-```
-
-## Notes
-
-- All generated images include SynthID watermarks
-- Image-only mode (`responseModalities: ["IMAGE"]`) won't work with Google Search grounding
-- For editing, describe changes conversationally—the model understands semantic masking
+Before generating:
+- [ ] Narrative description (not keyword list)?
+- [ ] Camera/lighting details for photorealism?
+- [ ] Text in quotes, font style described?
+- [ ] Right model for task (Pro for text/complex)?
+- [ ] Aspect ratio appropriate for use case?
+- [ ] User preference: prescriptive or open?

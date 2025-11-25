@@ -30,29 +30,31 @@ from pathlib import Path
 from PIL import Image
 from google import genai
 from google.genai import types
+from gemini_utils import extract_image_and_text, save_prompt_log, DEFAULT_OUTPUT_DIR
 
 
 class ImageChat:
     """Interactive chat session for image generation and refinement."""
-    
+
     def __init__(
         self,
         model: str = "gemini-2.5-flash-image",
-        output_dir: str = ".",
+        output_dir: str | None = None,
     ):
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             raise EnvironmentError("GEMINI_API_KEY environment variable not set")
-        
+
         self.client = genai.Client(api_key=api_key)
         self.model = model
-        self.output_dir = Path(output_dir)
+        self.output_dir = Path(output_dir) if output_dir else DEFAULT_OUTPUT_DIR
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.chat = None
         self.current_image = None
         self.image_count = 0
-        
+        self.prompt_history: list[str] = []  # Track prompts for logging
+
         self._init_chat()
     
     def _init_chat(self):
@@ -65,44 +67,47 @@ class ImageChat:
             config=config,
         )
         self.current_image = None
+        self.prompt_history = []
     
     def send_message(self, message: str, image: Image.Image | None = None) -> tuple[str | None, Image.Image | None]:
         """Send a message and optionally an image, return response text and image."""
         contents = []
         if message:
             contents.append(message)
+            self.prompt_history.append(message)
         if image:
             contents.append(image)
-        
+
         if not contents:
             return None, None
-        
+
         response = self.chat.send_message(contents)
-        
-        text_response = None
-        image_response = None
-        
-        for part in response.parts:
-            if part.text is not None:
-                text_response = part.text
-            elif part.inline_data is not None:
-                image_response = part.as_image()
-                self.current_image = image_response
-        
+
+        image_response, text_response = extract_image_and_text(response)
+
+        if image_response:
+            self.current_image = image_response
+
         return text_response, image_response
     
     def save_image(self, filename: str | None = None) -> str | None:
         """Save the current image to a file."""
         if self.current_image is None:
             return None
-        
+
         if filename is None:
             self.image_count += 1
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"image_{timestamp}_{self.image_count}.png"
-        
+
         filepath = self.output_dir / filename
         self.current_image.save(filepath)
+
+        # Save prompt log with conversation history
+        if self.prompt_history:
+            combined_prompt = "\n\n---\n\n".join(self.prompt_history)
+            save_prompt_log(str(filepath), combined_prompt)
+
         return str(filepath)
     
     def load_image(self, path: str) -> Image.Image:
@@ -126,8 +131,8 @@ def main():
     )
     parser.add_argument(
         "--output-dir", "-o",
-        default=".",
-        help="Directory to save images"
+        default=None,
+        help="Directory to save images (default: ~/Documents/generated images)"
     )
     
     args = parser.parse_args()
