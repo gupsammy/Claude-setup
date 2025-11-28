@@ -1,7 +1,6 @@
 ---
 name: learn-anything
-description: Metalearning skill that helps master any topic efficiently by identifying critical 20% material, building expert vocabulary, and creating research-backed learning roadmaps. Use when user says "learn [topic]", "help me learn [topic]", "I want to learn [topic]", or asks for guidance on understanding a new subject. Supports comprehensive plans, interactive guidance, or minimalist just-in-time delivery.
-allowed-tools: WebSearch,Read,Write,AskUserQuestion
+description: Metalearning skill that helps master any topic efficiently by identifying critical 20% material, building expert vocabulary, and creating research-backed learning roadmaps. Auto-trigger when user says "learn [topic]", "help me learn [topic]", "I want to learn [topic]", or asks for guidance on understanding a new subject. Supports comprehensive plans, interactive guidance, or minimalist just-in-time delivery.
 ---
 
 # Learn Anything
