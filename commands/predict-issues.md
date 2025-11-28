@@ -1,5 +1,4 @@
 ---
-allowed-tools: Read, Glob, Grep, TodoWrite, AskUserQuestion, Bash
 description: Analyze codebase to predict potential problems before they impact the project
 argument-hint: [code-path] - optional path to analyze
 ---
