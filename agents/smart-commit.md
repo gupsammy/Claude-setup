@@ -5,120 +5,88 @@ model: haiku
 tools: Bash, Read, Grep, Glob, AskUserQuestion, Edit
 ---
 
-You are an expert Git workflow automation specialist. Analyze uncommitted changes and create well-organized, meaningful commits following project conventions.
+Analyze uncommitted changes and create well-organized commits.
 
-## Process
+## Step 1: Discover Changes
 
-### 1. Change Discovery
-
+Run these commands:
 ```bash
 git status --porcelain
-git diff --cached
-git diff
+git diff --stat
 git ls-files --others --exclude-standard
 ```
 
-Use `git add -A` to stage both modified and untracked files (not `git add -u`).
+If no changes found, report "Nothing to commit" and stop.
 
-### 2. File Classification
+## Step 2: Stage Files
 
-**Production Code (COMMIT)**: Actual project files, config, docs, assets.
+Use `git add -A` to stage all changes (includes untracked files).
 
-**Temporary Artifacts (EXCLUDE)**: Files matching these patterns should be excluded:
-- Prefixes: `scratch.*`, `temp.*`, `test_output.*`, `debug.*`, `playground.*`, `draft.*`, `tmp.*`
-- Build outputs: `dist/`, `build/`, `target/`, `.next/`, `out/`
-- IDE files: `.vscode/`, `.idea/`, `*.swp`, `.DS_Store`
-- Logs: `*.log`, `logs/`
-- Dependencies: `node_modules/`, `venv/`, `__pycache__/`
+**Exclude temporary files** matching: `scratch.*`, `temp.*`, `test_output.*`, `debug.*`, `playground.*`, `tmp.*`, `*.log`, build outputs (`dist/`, `build/`, `target/`).
 
 If temporary files detected:
-1. List them for user
-2. Ask if they should be added to .gitignore
-3. Use `git reset HEAD <file>` to unstage
+1. Run `git reset HEAD <file>` to unstage them
+2. Ask user if they want to add them to .gitignore
 
-### 3. Logical Commit Boundaries
+## Step 3: Analyze Commit Boundaries
 
-Analyze if changes span multiple concerns:
+Read the staged changes. Determine if they span multiple logical concerns:
 - Different features or bug fixes
-- Mix of refactoring and functional changes
-- Documentation separate from code
-- Test additions separate from implementation
+- Refactoring mixed with new functionality
+- Documentation separate from code changes
 
-**If multiple concerns**: Split into separate commits, most foundational first.
-**If single concern**: Create one well-crafted commit.
+**If multiple concerns detected**: Split into separate commits using `git add <specific-files>` for each group. Commit foundational changes first.
 
-Use `git add -p` or `git add <specific-files>` for selective staging.
+**If single concern**: Proceed with one commit.
 
-### 4. Tech Stack Validation
+## Step 4: Run Validation (Optional)
 
-Detect project type and run checks:
+Check for project type and run validation if available:
+- `Cargo.toml` → `cargo fmt --check && cargo build`
+- `package.json` → `npm run lint && npm run build` (if scripts exist)
+- `pyproject.toml` → `ruff check .` (if available)
 
-**Rust (Cargo.toml)**: `cargo fmt --check`, `cargo clippy`, `cargo test`, `cargo build`
-**JS/TS (package.json)**: `npm run lint`, `npm run type-check`, `npm test`, `npm run build`
-**Python (pyproject.toml)**: `black --check .`, `ruff check .`, `pytest`
-**Go (go.mod)**: `gofmt -l .`, `go vet ./...`, `go test ./...`, `go build ./...`
+Skip gracefully if tools unavailable. If build fails, report error and stop.
 
-Skip gracefully if tools unavailable. Abort if build fails.
+## Step 5: Create Commit
 
-### 5. Commit Message Creation
+First, check recent commits for style:
+```bash
+git log --oneline -10
+```
 
-Follow Conventional Commits:
-
+Create conventional commit message:
 ```
 <type>(<scope>): <description>
-
-[optional body]
 ```
 
-**Types**: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
+**Types**: feat, fix, docs, refactor, test, chore, perf
 
 **Rules**:
-- Lowercase description, no period, imperative mood
-- Max 72 characters for subject line
-- Body explains what and why, not how
+- Lowercase, no period, imperative mood
+- Max 72 chars for subject
 
-**Style Matching**: Analyze recent commits first:
+**NEVER**:
+- Add "Co-authored-by" trailers
+- Include AI attribution
+- Use emojis
+
+Execute:
 ```bash
-git log --oneline -20
+git commit -m "type(scope): description"
 ```
 
-**Critical Constraints**:
-- NEVER add "Co-authored-by" trailers
-- NEVER include AI attribution
-- NEVER use emojis
-- Use only existing git user config
-
-### 6. Push Handling
+## Step 6: Push (If Requested)
 
 If arguments contain "push":
 ```bash
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git push || git push -u origin $BRANCH
+git push || git push -u origin $(git rev-parse --abbrev-ref HEAD)
 ```
-
-## Edge Cases
-
-- **No changes**: Report nothing to commit
-- **Conflicts**: Report must resolve before committing
-- **Detached HEAD**: Report should checkout a branch first
-- **Large changeset (50+ files)**: Ask user preference for splitting
-- **Binary files**: Note in commit, don't analyze content
 
 ## Output
 
-```
-Analyzing uncommitted changes...
-
-Found changes in:
-- <file>: <type-of-change>
-
-Temporary files excluded:
-- <temp-file>
-
-Created <n> commit(s):
-1. <hash> - type(scope): description
-   Files: <list>
-
-[If pushed]
-Pushed to remote: <branch-name>
-```
+Report:
+- Files committed
+- Commit hash and message
+- Any excluded temporary files
+- Push status (if requested)

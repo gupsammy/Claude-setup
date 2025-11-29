@@ -30,22 +30,52 @@ git fetch origin
 
 If uncommitted changes detected, use the Task tool with subagent_type="smart-commit" to commit changes first.
 
-### 2. Branch Management
+### 2. Branch Management (CRITICAL)
 
-**If on base branch with unpushed commits:**
+**Step 1: Detect current situation**
 ```bash
-# Get commit summary for branch name generation
-git log origin/main..HEAD --oneline
+# Get current branch name
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo "Current branch: $CURRENT_BRANCH"
 
-# Create descriptive feature branch
-git checkout -b <generated-feature-branch-name>
+# Check if on main/master
+if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
+    echo "ON BASE BRANCH"
+fi
 
-# Reset base branch to match origin
-git checkout main && git reset --hard origin/main
-git checkout <feature-branch>
+# Count unpushed commits
+UNPUSHED=$(git rev-list origin/$CURRENT_BRANCH..HEAD --count 2>/dev/null || echo "0")
+echo "Unpushed commits: $UNPUSHED"
 ```
 
-**If already on feature branch:** Proceed with current branch.
+**Step 2: If on main/master with unpushed commits → CUT A FEATURE BRANCH**
+
+This is critical. If you detect:
+- Current branch is `main` or `master`
+- There are unpushed commits (UNPUSHED > 0)
+
+Then you MUST:
+1. Analyze the commits to generate a descriptive feature branch name (e.g., `feat/add-smart-commit-agents`)
+2. Create the feature branch from current HEAD
+3. Switch back to main and reset it to origin
+4. Switch to the new feature branch
+
+```bash
+# 1. Get commits for naming
+git log origin/main..HEAD --oneline
+
+# 2. Create feature branch (YOU generate the name based on commits)
+git checkout -b feat/descriptive-name-here
+
+# 3. Reset main to match origin (IMPORTANT: keeps main clean)
+git checkout main
+git reset --hard origin/main
+
+# 4. Return to feature branch
+git checkout feat/descriptive-name-here
+```
+
+**Step 3: If already on feature branch** → Skip branch management, proceed to PR status.
 
 ### 3. PR Status Determination
 
