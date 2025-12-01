@@ -37,27 +37,13 @@ EOF
 # Build context
 CONTEXT=""
 
+# Load previous session summary (Claude Code already provides git status)
 if [ "$SOURCE" = "startup" ] || [ "$SOURCE" = "clear" ]; then
     LATEST_MD="$PROJECT_DIR/latest.md"
     if [ -f "$LATEST_MD" ]; then
         LATEST_CONTENT=$(cat "$LATEST_MD")
         CONTEXT+="## Previous Session Context\n\n$LATEST_CONTENT\n\n"
     fi
-fi
-
-if git -C "$CWD" rev-parse --is-inside-work-tree &>/dev/null; then
-    BRANCH=$(git -C "$CWD" branch --show-current 2>/dev/null || echo "detached")
-    UNCOMMITTED=$(git -C "$CWD" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-    LAST_COMMITS=$(git -C "$CWD" log --oneline -3 2>/dev/null || echo "No commits")
-
-    CONTEXT+="## Current Git State\n\n"
-    CONTEXT+="- **Branch**: $BRANCH\n"
-    CONTEXT+="- **Uncommitted files**: $UNCOMMITTED\n"
-    CONTEXT+="- **Recent commits**:\n"
-
-    while IFS= read -r commit; do
-        [ -n "$commit" ] && CONTEXT+="  - $commit\n"
-    done <<< "$LAST_COMMITS"
 fi
 
 if [ -z "$CONTEXT" ]; then
