@@ -19,17 +19,6 @@
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude-code-docs/claude-docs-helper.sh hook-check"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "matcher": "*",
@@ -37,16 +26,6 @@
           {
             "type": "command",
             "command": "afplay /System/Library/Sounds/Funk.aiff"
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/samarthgupta/.claude-code-project-index/scripts/run_python.sh /Users/samarthgupta/.claude-code-project-index/scripts/reindex_if_needed.py",
-            "timeout": 10
           }
         ]
       },
@@ -75,24 +54,12 @@
       {
         "hooks": []
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/samarthgupta/.claude-code-project-index/scripts/run_python.sh /Users/samarthgupta/.claude-code-project-index/scripts/update_index.py",
-            "timeout": 5
-          }
-        ]
-      }
     ]
   },
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline-script.sh",
-    "padding": 1
+    "padding": 0.5
   },
   "enabledPlugins": {
     "agent-sdk-dev@claude-code-plugins": false,
