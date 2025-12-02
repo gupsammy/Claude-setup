@@ -550,15 +550,17 @@ TOTAL_LIFE_DAYS=$((LIFE_EXPECTANCY_YEARS * 36525 / 100))
 # Calculate days remaining
 DAYS_REMAINING=$((TOTAL_LIFE_DAYS - AGE_IN_DAYS))
 
-# Calculate percentage remaining
+# Calculate percentage remaining (with 2 decimal places)
 if [ $DAYS_REMAINING -lt 0 ]; then
-  LIFE_PERCENTAGE_REMAINING=0
+  LIFE_PERCENTAGE_REMAINING="0.00"
 else
-  LIFE_PERCENTAGE_REMAINING=$((DAYS_REMAINING * 100 / TOTAL_LIFE_DAYS))
+  LIFE_PERCENTAGE_REMAINING=$(awk -v days="$DAYS_REMAINING" -v total="$TOTAL_LIFE_DAYS" 'BEGIN {
+    pct = (days * 100.0) / total
+    if (pct > 100) pct = 100
+    if (pct < 0) pct = 0
+    printf "%.2f", pct
+  }')
 fi
-
-if [ $LIFE_PERCENTAGE_REMAINING -gt 100 ]; then LIFE_PERCENTAGE_REMAINING=100; fi
-if [ $LIFE_PERCENTAGE_REMAINING -lt 0 ]; then LIFE_PERCENTAGE_REMAINING=0; fi
 
 # Calculate month percentage
 # Get number of days in current month
