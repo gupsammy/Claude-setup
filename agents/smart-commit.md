@@ -57,7 +57,21 @@ Group 1 (refactor: session context loading): file1, file2, file3
 Group 2 (refactor: migrate reflect to session-search): file4, file5
 ```
 
-**If multiple concerns detected**: Use `git reset HEAD` then `git add <specific-files>` for each group. Commit foundational changes first.
+**Handle renames carefully (R status in git status --porcelain):**
+When splitting commits, `git reset HEAD` breaks rename detection. The old file deletion stays staged, but the new file becomes untracked.
+
+Before resetting, note all renames:
+```bash
+git status --porcelain | grep "^R"
+# Output: R  old/path.py -> new/path.py
+```
+
+When adding files for a group that includes a rename, add BOTH paths:
+```bash
+git add old/path.py new/path.py  # Adds deletion + new file together
+```
+
+**If multiple concerns detected**: Use `git reset HEAD` then `git add <specific-files>` for each group. For renames, add both old and new paths. Commit foundational changes first.
 
 **If single concern**: Proceed with one commit.
 
