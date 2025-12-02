@@ -28,26 +28,6 @@
             "command": "afplay /System/Library/Sounds/Funk.aiff"
           }
         ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node /Users/samarthgupta/.claude/plugins/cache/episodic-memory/cli/episodic-memory.js sync",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 /Users/samarthgupta/.claude/hooks/session-parser.py",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "Notification": [
@@ -66,7 +46,6 @@
     "pr-review-toolkit@claude-code-plugins": false,
     "commit-commands@claude-code-plugins": false,
     "feature-dev@claude-code-plugins": false,
-    "security-guidance@claude-code-plugins": true,
     "code-review@claude-code-plugins": false,
     "document-skills@anthropic-agent-skills": false,
     "explanatory-output-style@claude-code-plugins": false,
@@ -78,9 +57,9 @@
     "superpowers@superpowers-marketplace": false,
     "superpowers-chrome@superpowers-marketplace": false,
     "elements-of-style@superpowers-marketplace": true,
-    "episodic-memory@superpowers-marketplace": true,
     "superpowers-developing-for-claude-code@superpowers-marketplace": false,
-    "example-skills@anthropic-agent-skills": false
+    "example-skills@anthropic-agent-skills": false,
+    "security-guidance@claude-code-plugins": true
   },
   "forceLoginMethod": "claudeai",
   "alwaysThinkingEnabled": true
