@@ -2,27 +2,31 @@
 """
 Extract Claude Code conversations for analysis.
 
-A pure extraction tool - fetches raw conversation data without pre-filtering.
-Claude applies the analytical lens based on the reflect skill.
+A curated extraction tool - fetches conversation data with noise filtering.
+Removes tool_result system messages, simplifies paths, and supports compact output.
 
 Usage:
     # By timeframe (activity-based for project-specific queries)
-    python extract_conversations.py --days 3                    # Last 3 days of activity on current project
-    python extract_conversations.py --days 7 --project /path    # Last 7 days of activity on that project
-    python extract_conversations.py --days 2 --all-projects     # Last 2 calendar days across all projects
-    python extract_conversations.py --days 3 --from-today       # Last 3 calendar days (not activity-based)
+    python extract_conversations.py --days 3                    # Last 3 days of activity
+    python extract_conversations.py --days 7 --project /path    # Last 7 days on that project
+    python extract_conversations.py --days 2 --all-projects     # Last 2 calendar days all projects
 
-    # By conversation IDs (from episodic-memory search results)
-    python extract_conversations.py --ids abc123,def456,ghi789
-    python extract_conversations.py --id abc123
+    # By conversation IDs or paths
+    python extract_conversations.py --ids abc123,def456
+    python extract_conversations.py --paths /path/to/conv.jsonl
 
-    # Output formats
-    python extract_conversations.py --days 2 --output json
-    python extract_conversations.py --days 2 --output markdown
+    # Output modes
+    python extract_conversations.py --days 2 --compact          # User/assistant text only
+    python extract_conversations.py --days 2 --min-exchanges 3  # Skip short sessions
+    python extract_conversations.py --days 2 --output json      # JSON format
+
+Options:
+    --compact         Only show user/assistant text exchanges, no tool details
+    --min-exchanges N Skip sessions with fewer than N user messages
+    --from-today      Count days from today (not from last activity)
 
 Note: For project-specific queries, --days counts back from the most recent activity,
-not from today. This is useful when returning to older projects. Use --from-today
-or --all-projects for calendar-based timeframes.
+not from today. Use --from-today or --all-projects for calendar-based timeframes.
 """
 
 import json
@@ -171,12 +175,21 @@ def parse_conversation(file_path: Path) -> dict:
                 if entry.get("isMeta"):
                     continue
 
+                # Skip tool_result entries (they come as user type but are system responses)
+                if isinstance(content, list) and content:
+                    if isinstance(content[0], dict) and content[0].get("type") == "tool_result":
+                        continue
+
                 # Include command invocations but mark them
-                is_command = "<command-name>" in content
+                is_command = "<command-name>" in content if isinstance(content, str) else False
+
+                # Handle content that might be a list
+                if isinstance(content, list):
+                    content = " ".join(str(c) for c in content if isinstance(c, str))
 
                 conversation["exchanges"].append({
                     "role": "user",
-                    "content": content[:3000],  # Slightly longer truncation
+                    "content": content[:3000] if isinstance(content, str) else str(content)[:3000],
                     "timestamp": timestamp,
                     "is_command": is_command
                 })
@@ -284,79 +297,118 @@ def summarize_tool_input(input_data: dict) -> str:
     return f"keys: {', '.join(input_data.keys())}"
 
 
-def format_markdown(conversations: list[dict]) -> str:
+def shorten_path(path: str) -> str:
+    """Shorten file paths for readability."""
+    home = str(Path.home())
+    if path.startswith(home):
+        path = "~" + path[len(home):]
+    return path
+
+
+def format_time_short(timestamp: str) -> str:
+    """Format timestamp to shorter form: HH:MM on Mon DD."""
+    if not timestamp:
+        return ""
+    try:
+        dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        return dt.strftime("%H:%M on %b %d")
+    except:
+        return timestamp[:16] if timestamp else ""
+
+
+def format_markdown(conversations: list[dict], compact: bool = False) -> str:
     """Format extracted conversations as markdown."""
     output = []
     output.append("# Extracted Conversations")
     output.append(f"**Count**: {len(conversations)}")
-    output.append(f"**Generated**: {datetime.now().isoformat()}")
 
-    # Summary of projects
+    # Summary of projects (simplified)
     projects = {}
     for conv in conversations:
-        proj = conv["project"]
+        # Simplify project name
+        proj = conv["project"].replace("-Users-samarthgupta-", "~/")
         projects[proj] = projects.get(proj, 0) + 1
 
-    output.append(f"**Projects**: {len(projects)}")
-    for proj, count in sorted(projects.items(), key=lambda x: -x[1]):
-        output.append(f"  - {proj}: {count} conversations")
+    if len(projects) > 1:
+        output.append(f"**Projects**: {', '.join(f'{p}({c})' for p, c in projects.items())}")
     output.append("")
 
     for conv in conversations:
         if not conv["exchanges"]:
             continue
 
+        # Count meaningful exchanges (user text messages)
+        user_messages = [e for e in conv["exchanges"]
+                        if e["role"] == "user" and not e.get("is_command")]
+
         output.append(f"---")
         output.append(f"## Session: {conv['session_id'][:8]}")
-        output.append(f"**Project**: `{conv['project']}`")
-        output.append(f"**File**: `{conv['file']}`")
+
         if conv["summary"]:
             output.append(f"**Summary**: {conv['summary']}")
-        output.append(f"**Time**: {conv['timestamps']['start']} → {conv['timestamps']['end']}")
+
+        start_time = format_time_short(conv['timestamps']['start'])
+        end_time = format_time_short(conv['timestamps']['end'])
+        output.append(f"**Time**: {start_time} → {end_time}")
         output.append("")
 
-        # Files modified
-        if conv["files_modified"]:
-            output.append("### Files Modified")
-            for f in conv["files_modified"][:15]:
-                output.append(f"- `{f['file']}` ({f['tool']})")
-            if len(conv["files_modified"]) > 15:
-                output.append(f"- ... and {len(conv['files_modified']) - 15} more")
+        if compact:
+            # Compact mode: just exchanges, no tool details
+            output.append("### Conversation")
+            for ex in conv["exchanges"]:
+                role = ex["role"].upper()
+                content = ex.get("content", "")
+                if not content or (role == "ASSISTANT" and not content.strip()):
+                    continue
+                # Truncate long content
+                content = content[:500].replace('\n', ' ').strip()
+                if content:
+                    output.append(f"**{role}**: {content}")
             output.append("")
+        else:
+            # Full mode: files, tools, errors, then requests
+            # Files modified (shortened paths)
+            if conv["files_modified"]:
+                output.append("### Files Modified")
+                for f in conv["files_modified"][:10]:
+                    short_path = shorten_path(f['file'])
+                    output.append(f"- `{short_path}` ({f['tool']})")
+                if len(conv["files_modified"]) > 10:
+                    output.append(f"- ... and {len(conv['files_modified']) - 10} more")
+                output.append("")
 
-        # Tool usage summary
-        if conv["tool_uses"]:
-            tool_counts = {}
-            for t in conv["tool_uses"]:
-                tool = t["tool"]
-                tool_counts[tool] = tool_counts.get(tool, 0) + 1
+            # Tool usage summary
+            if conv["tool_uses"]:
+                tool_counts = {}
+                for t in conv["tool_uses"]:
+                    tool = t["tool"]
+                    tool_counts[tool] = tool_counts.get(tool, 0) + 1
 
-            output.append("### Tools Used")
-            for tool, count in sorted(tool_counts.items(), key=lambda x: -x[1]):
-                output.append(f"- {tool}: {count}")
-            output.append("")
+                output.append("### Tools Used")
+                tools_summary = ", ".join(f"{t}:{c}" for t, c in
+                                         sorted(tool_counts.items(), key=lambda x: -x[1]))
+                output.append(tools_summary)
+                output.append("")
 
-        # Errors
-        if conv["errors"]:
-            output.append("### Errors Encountered")
-            for e in conv["errors"][:5]:
-                error_preview = e['content'][:200].replace('\n', ' ')
-                output.append(f"- {error_preview}...")
-            output.append("")
+            # Errors (concise)
+            if conv["errors"]:
+                output.append("### Errors")
+                for e in conv["errors"][:3]:
+                    error_preview = e['content'][:150].replace('\n', ' ')
+                    output.append(f"- {error_preview}")
+                output.append("")
 
-        # Conversation exchanges (user messages only for brevity)
-        user_messages = [e for e in conv["exchanges"] if e["role"] == "user" and not e.get("is_command")]
-        if user_messages:
-            output.append("### User Requests")
-            for msg in user_messages[:10]:
-                content = msg["content"]
-                if isinstance(content, list):
-                    content = " ".join(str(c) for c in content)
-                content = str(content)[:300].replace('\n', ' ')
-                output.append(f"- {content}")
-            if len(user_messages) > 10:
-                output.append(f"- ... and {len(user_messages) - 10} more messages")
-            output.append("")
+            # User requests
+            if user_messages:
+                output.append("### User Requests")
+                for msg in user_messages[:8]:
+                    content = msg["content"]
+                    content = str(content)[:250].replace('\n', ' ').strip()
+                    if content:
+                        output.append(f"- {content}")
+                if len(user_messages) > 8:
+                    output.append(f"- ... and {len(user_messages) - 8} more")
+                output.append("")
 
     return "\n".join(output)
 
@@ -395,6 +447,10 @@ Examples:
     parser.add_argument("--paths", type=str, help="Comma-separated conversation file paths")
     parser.add_argument("--output", choices=["json", "markdown"], default="markdown",
                        help="Output format (default: markdown)")
+    parser.add_argument("--compact", action="store_true",
+                       help="Compact output: only user/assistant text, no tool details")
+    parser.add_argument("--min-exchanges", type=int, default=0,
+                       help="Skip sessions with fewer than N meaningful exchanges")
 
     args = parser.parse_args()
 
@@ -445,13 +501,21 @@ Examples:
     for f in files:
         conv = parse_conversation(f)
         if conv["exchanges"]:
-            conversations.append(conv)
+            # Apply min-exchanges filter
+            user_messages = [e for e in conv["exchanges"]
+                           if e["role"] == "user" and not e.get("is_command")]
+            if len(user_messages) >= args.min_exchanges:
+                conversations.append(conv)
+
+    if not conversations:
+        print("No conversations found matching criteria", file=sys.stderr)
+        sys.exit(0)
 
     # Output
     if args.output == "json":
         print(format_json(conversations))
     else:
-        print(format_markdown(conversations))
+        print(format_markdown(conversations, compact=args.compact))
 
 
 if __name__ == "__main__":

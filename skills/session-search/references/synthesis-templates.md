@@ -1,4 +1,4 @@
-# Synthesis Templates for Reflect Skill
+# Synthesis Templates for session-search
 
 Templates and guidance for structuring output from each analytical lens.
 
@@ -10,7 +10,7 @@ Templates and guidance for structuring output from each analytical lens.
 4. **Show evidence**: Brief quotes or references to support observations
 5. **Keep it scannable**: Use clear structure, avoid walls of text
 
-## Learning Lens Template
+## extract-learnings Template
 
 ```markdown
 ## Learning Reflection: [Timeframe]
@@ -44,7 +44,7 @@ Templates and guidance for structuring output from each analytical lens.
 - [Specific actionable recommendation]
 ```
 
-## Gaps Lens Template
+## find-gaps Template
 
 ```markdown
 ## Knowledge Gap Analysis: [Timeframe]
@@ -75,7 +75,7 @@ Templates and guidance for structuring output from each analytical lens.
 Consider using the `learn-anything` skill to create a structured learning plan for [top gap].
 ```
 
-## Mentor Lens Template
+## review-process Template
 
 ```markdown
 ## Mentor Review: [Timeframe]
@@ -105,7 +105,7 @@ Consider using the `learn-anything` skill to create a structured learning plan f
 [Positive patterns worth consciously continuing]
 ```
 
-## Retro Lens Template
+## run-retro Template
 
 ```markdown
 ## Retrospective: [Project/Feature] ([Timeframe])
@@ -140,7 +140,7 @@ Consider using the `learn-anything` skill to create a structured learning plan f
 2. [Specific recommendation]
 ```
 
-## Antipatterns Lens Template
+## find-antipatterns Template
 
 ```markdown
 ## Antipattern Analysis: [Timeframe]
@@ -174,7 +174,7 @@ Consider using the `learn-anything` skill to create a structured learning plan f
 [Habits, checks, or tools to prevent recurrence]
 ```
 
-## Decisions Lens Template
+## extract-decisions Template
 
 ```markdown
 ## Decision Extraction: [Timeframe/Project]
@@ -245,11 +245,11 @@ For extrapolated analyses that don't fit predefined lenses:
 
 | Lens | Typical Length | When to Expand |
 |------|---------------|----------------|
-| Learning | 300-500 words | Rich period of growth |
-| Gaps | 250-400 words | Multiple significant gaps |
-| Mentor | 300-450 words | Complex process patterns |
-| Retro | 400-600 words | Long or complex project |
-| Antipatterns | 300-500 words | Multiple recurring issues |
-| Decisions | 300-600 words | Many architectural choices |
+| extract-learnings | 300-500 words | Rich period of growth |
+| find-gaps | 250-400 words | Multiple significant gaps |
+| review-process | 300-450 words | Complex process patterns |
+| run-retro | 400-600 words | Long or complex project |
+| find-antipatterns | 300-500 words | Multiple recurring issues |
+| extract-decisions | 300-600 words | Many architectural choices |
 
 Err on the side of concise. Users can always ask for more detail on specific findings.
