@@ -30,12 +30,34 @@ If temporary files detected:
 
 ## Step 3: Analyze Commit Boundaries
 
-Read the staged changes. Determine if they span multiple logical concerns:
-- Different features or bug fixes
-- Refactoring mixed with new functionality
-- Documentation separate from code changes
+For each changed file, write a one-line description of what the change accomplishes (focus on PURPOSE, not file location).
 
-**If multiple concerns detected**: Split into separate commits using `git add <specific-files>` for each group. Commit foundational changes first.
+Example analysis:
+```
+hooks/session-context-loader.sh → "loads session context on startup"
+hooks/parse-session.py → "parses JSONL session files"
+skills/session-search/SKILL.md → "defines session search skill"
+plugins/installed_plugins.json → "removes deprecated plugin"
+```
+
+**Group changes by PURPOSE, not directory:**
+- Changes serving the same goal = one commit
+- Changes serving different goals = separate commits
+
+Ask: "If I explained these changes to a teammate, would I describe them as one thing or multiple things?"
+
+**Signs of separate concerns:**
+- "Added X" AND "Fixed Y" (feature + bugfix)
+- "Renamed/migrated A" AND "Improved B" (migration + enhancement)
+- Changes that could be reverted independently without breaking each other
+
+**Output your proposed groupings** before committing:
+```
+Group 1 (refactor: session context loading): file1, file2, file3
+Group 2 (refactor: migrate reflect to session-search): file4, file5
+```
+
+**If multiple concerns detected**: Use `git reset HEAD` then `git add <specific-files>` for each group. Commit foundational changes first.
 
 **If single concern**: Proceed with one commit.
 
