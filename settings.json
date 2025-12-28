@@ -1,15 +1,15 @@
 {
+  "permissions": {
+    "deny": [
+      "Read(./package-lock.json)",
+      "Read(./node_modules/**)",
+      "Read(./.DS_Store)"
+    ],
+    "defaultMode": "default"
+  },
   "model": "opus",
   "hooks": {
     "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/samarthgupta/.claude/hooks/learning-style-session-start.sh"
-          }
-        ]
-      },
       {
         "hooks": [
           {
@@ -29,11 +29,6 @@
           }
         ]
       }
-    ],
-    "Notification": [
-      {
-        "hooks": []
-      }
     ]
   },
   "statusLine": {
@@ -42,25 +37,26 @@
     "padding": 0.5
   },
   "enabledPlugins": {
-    "agent-sdk-dev@claude-code-plugins": false,
-    "pr-review-toolkit@claude-code-plugins": false,
-    "commit-commands@claude-code-plugins": false,
-    "feature-dev@claude-code-plugins": false,
-    "code-review@claude-code-plugins": false,
-    "document-skills@anthropic-agent-skills": false,
-    "explanatory-output-style@claude-code-plugins": false,
-    "learning-output-style@claude-code-plugins": false,
-    "frontend-design@claude-code-plugins": true,
-    "plugin-dev@claude-code-plugins": true,
-    "ralph-wiggum@claude-code-plugins": false,
-    "hookify@claude-code-plugins": false,
-    "superpowers@superpowers-marketplace": false,
-    "superpowers-chrome@superpowers-marketplace": false,
-    "elements-of-style@superpowers-marketplace": true,
-    "superpowers-developing-for-claude-code@superpowers-marketplace": false,
-    "example-skills@anthropic-agent-skills": false,
-    "security-guidance@claude-code-plugins": true
+    "agent-sdk-dev@claude-plugins-official": false,
+    "code-review@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": true,
+    "greptile@claude-plugins-official": false,
+    "hookify@claude-plugins-official": false,
+    "notion@claude-plugins-official": false,
+    "playwright@claude-plugins-official": false,
+    "plugin-dev@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": false,
+    "ralph-wiggum@claude-plugins-official": false,
+    "security-guidance@claude-plugins-official": false,
+    "serena@claude-plugins-official": false,
+    "stripe@claude-plugins-official": false,
+    "pyright-lsp@claude-plugins-official": false,
+    "rust-analyzer-lsp@claude-plugins-official": false,
+    "swift-lsp@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": true
   },
   "forceLoginMethod": "claudeai",
+  "syntaxHighlightingDisabled": true,
   "alwaysThinkingEnabled": true
 }
