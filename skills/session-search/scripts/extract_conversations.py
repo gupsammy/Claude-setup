@@ -353,17 +353,32 @@ def format_markdown(conversations: list[dict], compact: bool = False) -> str:
         output.append("")
 
         if compact:
-            # Compact mode: just exchanges, no tool details
+            # Compact mode: just exchanges, no metadata
             output.append("### Conversation")
+            exchange_count = 0
+            max_exchanges = 16
             for ex in conv["exchanges"]:
                 role = ex["role"].upper()
                 content = ex.get("content", "")
                 if not content or (role == "ASSISTANT" and not content.strip()):
                     continue
+                # Skip command invocations and system noise
+                if ex.get("is_command"):
+                    continue
+                if "<local-command-stdout>" in content or "<command-name>" in content:
+                    continue
                 # Truncate long content
                 content = content[:500].replace('\n', ' ').strip()
                 if content:
                     output.append(f"**{role}**: {content}")
+                    exchange_count += 1
+                    if exchange_count >= max_exchanges:
+                        remaining = len([e for e in conv["exchanges"]
+                                        if e.get("content") and not e.get("is_command")
+                                        and "<local-command-stdout>" not in str(e.get("content", ""))]) - max_exchanges
+                        if remaining > 0:
+                            output.append(f"*... and {remaining} more exchanges*")
+                        break
             output.append("")
         else:
             # Full mode: files, tools, errors, then requests
@@ -398,17 +413,32 @@ def format_markdown(conversations: list[dict], compact: bool = False) -> str:
                     output.append(f"- {error_preview}")
                 output.append("")
 
-            # User requests
-            if user_messages:
-                output.append("### User Requests")
-                for msg in user_messages[:8]:
-                    content = msg["content"]
-                    content = str(content)[:250].replace('\n', ' ').strip()
-                    if content:
-                        output.append(f"- {content}")
-                if len(user_messages) > 8:
-                    output.append(f"- ... and {len(user_messages) - 8} more")
-                output.append("")
+            # Conversation (both user and assistant)
+            output.append("### Conversation")
+            exchange_count = 0
+            max_exchanges = 12
+            for ex in conv["exchanges"]:
+                role = ex["role"].upper()
+                content = ex.get("content", "")
+                if not content or (role == "ASSISTANT" and not content.strip()):
+                    continue
+                # Skip command invocations and system noise
+                if ex.get("is_command"):
+                    continue
+                if "<local-command-stdout>" in content or "<command-name>" in content:
+                    continue
+                content = str(content)[:400].replace('\n', ' ').strip()
+                if content:
+                    output.append(f"**{role}**: {content}")
+                    exchange_count += 1
+                    if exchange_count >= max_exchanges:
+                        remaining = len([e for e in conv["exchanges"]
+                                        if e.get("content") and not e.get("is_command")
+                                        and "<local-command-stdout>" not in str(e.get("content", ""))]) - max_exchanges
+                        if remaining > 0:
+                            output.append(f"*... and {remaining} more exchanges*")
+                        break
+            output.append("")
 
     return "\n".join(output)
 
