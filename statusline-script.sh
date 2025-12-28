@@ -132,163 +132,29 @@ get_weather_icon() {
   esac
 }
 
-# Parse JSONL session files directly for accurate token usage
+# Get context percentage from Claude Code's direct JSON input
 get_context_percentage() {
-  local session_id=$(echo "$input" | jq -r '.session_id // ""' 2>/dev/null)
-  local current_dir=$(echo "$input" | jq -r '.workspace.current_dir // ""' 2>/dev/null)
-  local model_id=$(echo "$input" | jq -r '.model.id // ""' 2>/dev/null)
+  local usage=$(echo "$input" | jq '.context_window.current_usage // null' 2>/dev/null)
 
-  # Determine context window size based on model - using more conservative estimates
-  local context_limit=200000
-  if [[ "$model_id" == *"sonnet-4"* ]]; then
-    context_limit=200000 # Conservative estimate for Sonnet 4
-  elif [[ "$model_id" == *"claude-3-5-sonnet"* ]]; then
-    context_limit=200000
-  elif [[ "$model_id" == *"opus"* ]]; then
-    context_limit=200000 # More conservative for Opus 4.1
-  fi
+  if [ "$usage" != "null" ] && [ -n "$usage" ]; then
+    local input_tokens=$(echo "$usage" | jq '.input_tokens // 0' 2>/dev/null)
+    local cache_create=$(echo "$usage" | jq '.cache_creation_input_tokens // 0' 2>/dev/null)
+    local cache_read=$(echo "$usage" | jq '.cache_read_input_tokens // 0' 2>/dev/null)
+    local current=$((input_tokens + cache_create + cache_read))
+    local size=$(echo "$input" | jq '.context_window.context_window_size // 200000' 2>/dev/null)
 
-  # Find the correct project directory based on current working directory
-  local jsonl_file=""
-  local projects_base="$HOME/.claude/projects"
-  local projects_dir=""
-
-  # Get current directory from Claude Code input or fallback to PWD
-  local cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // ""' 2>/dev/null)
-  if [ -z "$cwd" ]; then
-    cwd="$PWD"
-  fi
-
-  # Convert current directory path to Claude's project directory format
-  # Replace / with - and remove leading /
-  local project_suffix=$(echo "$cwd" | sed 's/\//-/g' | sed 's/^-//')
-  projects_dir="$projects_base/-$project_suffix"
-
-  # Debug project directory detection
-  if [ "$DEBUG" = "1" ]; then
-    echo "DEBUG: CWD: $cwd" >&2
-    echo "DEBUG: Project suffix: $project_suffix" >&2
-    echo "DEBUG: Looking in projects dir: $projects_dir" >&2
-  fi
-
-  if [ -d "$projects_dir" ]; then
-    # ONLY use the exact session_id provided by this Claude Code instance
-    if [ -n "$session_id" ] && [ "$session_id" != "test" ]; then
-      jsonl_file=$(find "$projects_dir" -name "${session_id}.jsonl" -type f 2>/dev/null | head -1)
-    fi
-  else
-    # Fallback: search all project directories if the computed path doesn't exist
-    if [ -n "$session_id" ] && [ "$session_id" != "test" ]; then
-      jsonl_file=$(find "$projects_base" -name "${session_id}.jsonl" -type f 2>/dev/null | head -1)
-      if [ "$DEBUG" = "1" ] && [ -n "$jsonl_file" ]; then
-        echo "DEBUG: Fallback found session file: $jsonl_file" >&2
-      fi
-    fi
-  fi
-
-  # If still no file found, this means context is 0% (new session, cleared, or different folder)
-
-  if [ -n "$jsonl_file" ] && [ -f "$jsonl_file" ]; then
-    # SIMPLIFIED: Find the most recent cache_read_tokens + its associated input/output
-    # This represents the current effective context for THIS specific session
-    local effective_tokens=0
-    local session_cache_read=0
-    local session_input=0
-    local session_output=0
-
-    # Get the most recent non-zero usage entry from THIS session file
-    local most_recent_usage=$(grep '"usage"' "$jsonl_file" | tail -20 | while IFS= read -r line; do
-      local cache_read=$(echo "$line" | jq -r '.message.usage.cache_read_input_tokens // .usage.cache_read_input_tokens // 0' 2>/dev/null)
-      local input_tokens=$(echo "$line" | jq -r '.message.usage.input_tokens // .usage.input_tokens // 0' 2>/dev/null)
-      local output_tokens=$(echo "$line" | jq -r '.message.usage.output_tokens // .usage.output_tokens // 0' 2>/dev/null)
-
-      # Print the entry with the highest cache_read value
-      if [ -n "$cache_read" ] && [ "$cache_read" != "null" ] && [ "$cache_read" -gt 0 ]; then
-        echo "$cache_read $input_tokens $output_tokens"
-      elif [ -n "$input_tokens" ] && [ "$input_tokens" != "null" ] && [ "$input_tokens" -gt 0 ]; then
-        echo "0 $input_tokens $output_tokens"
-      fi
-    done | sort -nr | head -1)
-
-    if [ -n "$most_recent_usage" ]; then
-      read session_cache_read session_input session_output <<<"$most_recent_usage"
-    fi
-
-    # Calculate effective context for THIS session only
-    effective_tokens=$((session_cache_read + session_input + session_output))
-
-    # Debug output for token counts
     if [ "$DEBUG" = "1" ]; then
-      echo "DEBUG: Using session file: $jsonl_file" >&2
-      echo "DEBUG: Session ID: $session_id" >&2
-      echo "DEBUG: Session context - Cache: $session_cache_read, Input: $session_input, Output: $session_output, Total: $effective_tokens" >&2
+      echo "DEBUG: Context - Input: $input_tokens, Cache Create: $cache_create, Cache Read: $cache_read, Total: $current, Size: $size" >&2
     fi
 
-    if [ "$effective_tokens" -gt 0 ]; then
-      local percentage=$((effective_tokens * 100 / context_limit))
+    if [ "$size" -gt 0 ] && [ "$current" -gt 0 ]; then
+      local percentage=$((current * 100 / size))
       if [ $percentage -gt 100 ]; then percentage=100; fi
       echo "$percentage"
       return
     fi
   fi
 
-  # Fallback: try transcript path if JSONL parsing fails
-  local transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
-  if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
-    # FIXED: Parse ENTIRE transcript file and sum ALL usage entries including ALL token types
-    local total_input_tokens=0
-    local total_output_tokens=0
-    local total_cache_read_tokens=0
-    local total_cache_creation_tokens=0
-
-    # Process each line of the transcript file to extract usage data
-    while IFS= read -r line; do
-      if [ -n "$line" ] && echo "$line" | grep -q '"usage"'; then
-        # Use jq for robust JSON parsing if available, otherwise use grep
-        if command -v jq >/dev/null 2>&1; then
-          # Try both .usage and .message.usage paths
-          local input_tokens=$(echo "$line" | jq -r '.message.usage.input_tokens // .usage.input_tokens // 0' 2>/dev/null)
-          local output_tokens=$(echo "$line" | jq -r '.message.usage.output_tokens // .usage.output_tokens // 0' 2>/dev/null)
-          local cache_read_tokens=$(echo "$line" | jq -r '.message.usage.cache_read_input_tokens // .usage.cache_read_input_tokens // 0' 2>/dev/null)
-          local cache_creation_tokens=$(echo "$line" | jq -r '.message.usage.cache_creation_input_tokens // .usage.cache_creation_input_tokens // 0' 2>/dev/null)
-        else
-          # Fallback to grep pattern matching
-          local input_tokens=$(echo "$line" | grep -o '"input_tokens":[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
-          local output_tokens=$(echo "$line" | grep -o '"output_tokens":[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
-          local cache_read_tokens=$(echo "$line" | grep -o '"cache_read_input_tokens":[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
-          local cache_creation_tokens=$(echo "$line" | grep -o '"cache_creation_input_tokens":[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
-        fi
-
-        # Add to totals (ensure we have valid numbers)
-        if [ -n "$input_tokens" ] && [ "$input_tokens" != "null" ] && [ "$input_tokens" != "0" ]; then
-          total_input_tokens=$((total_input_tokens + input_tokens))
-        fi
-        if [ -n "$output_tokens" ] && [ "$output_tokens" != "null" ] && [ "$output_tokens" != "0" ]; then
-          total_output_tokens=$((total_output_tokens + output_tokens))
-        fi
-        if [ -n "$cache_read_tokens" ] && [ "$cache_read_tokens" != "null" ] && [ "$cache_read_tokens" != "0" ]; then
-          total_cache_read_tokens=$((total_cache_read_tokens + cache_read_tokens))
-        fi
-        if [ -n "$cache_creation_tokens" ] && [ "$cache_creation_tokens" != "null" ] && [ "$cache_creation_tokens" != "0" ]; then
-          total_cache_creation_tokens=$((total_cache_creation_tokens + cache_creation_tokens))
-        fi
-      fi
-    done <"$transcript_path"
-
-    local total_tokens=$((total_input_tokens + total_output_tokens + total_cache_read_tokens + total_cache_creation_tokens))
-
-    # Debug output for token counts
-    if [ "$DEBUG" = "1" ] && [ "$total_tokens" -gt 0 ]; then
-      echo "DEBUG: Token counts from transcript - Input: $total_input_tokens, Output: $total_output_tokens, Cache Read: $total_cache_read_tokens, Cache Creation: $total_cache_creation_tokens, Total: $total_tokens" >&2
-    fi
-
-    if [ "$total_tokens" -gt 0 ]; then
-      local percentage=$((total_tokens * 100 / context_limit))
-      if [ $percentage -gt 100 ]; then percentage=100; fi
-      echo "$percentage"
-      return
-    fi
-  fi
   echo "0"
 }
 
@@ -380,7 +246,13 @@ MCP_STATUS=$(get_mcp_status)
 # Additional formatting
 DATE_DD=$(date +%d)
 MONTH_MON=$(date +%b)
-CURRENT_DIR=$(basename "$PWD")
+# Get project directory from Claude Code JSON input
+PROJECT_DIR=$(echo "$input" | jq -r '.workspace.project_dir // ""' 2>/dev/null)
+if [ -n "$PROJECT_DIR" ]; then
+  CURRENT_DIR=$(basename "$PROJECT_DIR")
+else
+  CURRENT_DIR=$(basename "$PWD")
+fi
 
 # Get weather with icon
 WEATHER_ICON=$(get_weather_icon "$WEATHER")
@@ -604,6 +476,9 @@ fi
 # Claude info from JSON
 MODEL_NAME=$(echo "$input" | jq -r '.model.display_name // "Unknown Model"')
 OUTPUT_STYLE=$(echo "$input" | jq -r '.output_style.name // "default"')
+
+# DEBUG: Capture output_style JSON to see what Claude Code is actually sending
+echo "$input" | jq '.output_style' > /tmp/debug-output-style.json 2>/dev/null
 
 # Debug mode - uncomment to see debug info
 DEBUG=0

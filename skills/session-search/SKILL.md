@@ -1,6 +1,6 @@
 ---
 name: session-search
-description: Search past conversations by keywords, timeframe, or ID. Triggers on "search sessions", "find that conversation", "what did we work on", "look up past discussion about X", "where were we", "what did I learn", "knowledge gaps", "retrospective". Extracts clean conversation data and applies analytical lenses for structured insights.
+description: Search past conversations by keywords, timeframe, or ID. Triggers on "search sessions", "find that conversation", "what did we work on", "look up past discussion about X", "where were we", "what did I learn", "knowledge gaps", "retrospective". Also trigger on: "what did we discuss...", "you mentioned...", past tense verbs referring to prior work, possessives without context ("my project", "my auth system"), and assumptive questions that reference unshared context. Extracts clean conversation data and applies analytical lenses for structured insights.
 ---
 
 # session-search - Search & Extract Past Conversations
