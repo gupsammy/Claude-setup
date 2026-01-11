@@ -1,10 +1,24 @@
 ---
-description: Clean up and optimize CLAUDE.md documentation
-allowed-tools: Read, Glob, Write, Bash(wc:*)
+name: updateclaudemd
+description: >
+  Use when user says "update CLAUDE.md", "refresh the docs", "sync claude config",
+  "optimize project instructions", "clean up CLAUDE.md", or when documentation
+  is stale, verbose, or out of sync with codebase reality.
 argument-hint: (no arguments)
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Write
+  - Bash(wc:*, head:*)
+hooks:
+  PreToolUse:
+    - matcher: "Write"
+      command: "cp CLAUDE.md CLAUDE.md.bak 2>/dev/null || true"
+      once: true
 ---
 
-# Task: Update and Optimize CLAUDE.md
+# Update and Optimize CLAUDE.md
 
 Maintain a clean, focused, and accurate CLAUDE.md file for this project.
 
