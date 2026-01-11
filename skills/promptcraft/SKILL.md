@@ -160,7 +160,7 @@ Brief overview (1-2 sentences).
 | `$1`, `$2`, `$3` | Positional arguments |
 | `@path/file` | Load file contents |
 | `@$1` | Load file from argument |
-| `` !`command` `` | Execute bash, include output |
+| Exclamation + backticks | Execute bash command, include output |
 
 ### Progressive Disclosure
 For complex skills, organize into subdirectories:
