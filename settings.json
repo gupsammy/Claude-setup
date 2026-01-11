@@ -1,8 +1,10 @@
 {
+  "fileSuggestion": {
+    "type": "command",
+    "command": "~/.claude/file-suggestion.sh"
+  },
   "permissions": {
     "deny": [
-      "Read(./package-lock.json)",
-      "Read(./node_modules/**)",
       "Read(./.DS_Store)"
     ],
     "defaultMode": "default"
@@ -38,7 +40,7 @@
   },
   "enabledPlugins": {
     "agent-sdk-dev@claude-plugins-official": false,
-    "code-review@claude-plugins-official": false,
+    "code-review@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": true,
     "greptile@claude-plugins-official": false,
@@ -48,15 +50,23 @@
     "plugin-dev@claude-plugins-official": false,
     "pr-review-toolkit@claude-plugins-official": false,
     "ralph-wiggum@claude-plugins-official": false,
-    "security-guidance@claude-plugins-official": false,
+    "security-guidance@claude-plugins-official": true,
     "serena@claude-plugins-official": false,
     "stripe@claude-plugins-official": false,
-    "pyright-lsp@claude-plugins-official": false,
-    "rust-analyzer-lsp@claude-plugins-official": false,
-    "swift-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": true
+    "pyright-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "github@claude-plugins-official": false,
+    "figma@claude-plugins-official": false,
+    "Notion@claude-plugins-official": false,
+    "ralph-loop@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": true,
+    "huggingface-skills@claude-plugins-official": false,
+    "gopls-lsp@claude-plugins-official": true,
+    "canvas@claude-canvas": true
   },
   "forceLoginMethod": "claudeai",
-  "syntaxHighlightingDisabled": true,
+  "syntaxHighlightingDisabled": false,
   "alwaysThinkingEnabled": true
 }
