@@ -1,14 +1,14 @@
 ---
-name: session-search
-description: Search past conversations by keywords, timeframe, or ID. Triggers on "search sessions", "find that conversation", "what did we work on", "look up past discussion about X", "where were we", "what did I learn", "knowledge gaps", "retrospective". Also trigger on: "what did we discuss...", "you mentioned...", past tense verbs referring to prior work, possessives without context ("my project", "my auth system"), and assumptive questions that reference unshared context. Extracts clean conversation data and applies analytical lenses for structured insights.
+name: search-conversations
+description: Search past Claude Code conversations. Use when user says "search conversations", "find that chat", "what did we discuss", "where did we talk about", "look up past session", "find conversation about X", "search history", "what did I ask about", "remember when we", "that discussion about". Also triggers on past-tense questions referencing prior work or possessives without context.
 ---
 
-# session-search
+# search-conversations
 
 ## Extraction
 
 ```bash
-python3 ~/.claude/skills/session-search/scripts/extract_conversations.py --days 3
+python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py --days 3
 ```
 
 | Option | Effect |
@@ -28,14 +28,16 @@ python3 ~/.claude/skills/session-search/scripts/extract_conversations.py --days 
 
 ## Workflow
 
-1. **Grep for keywords** (generate semantic synonyms):
+1. **Search for keywords** with qmd (BM25 full-text search):
    ```bash
-   grep -l -E "auth|login|session" ~/.claude/projects/*/*.jsonl
+   qmd search "auth login session" -c conversations -n 10 --files
    ```
 
 2. **Extract**: `python3 ... --paths /found/conv.jsonl`
 
 3. **Apply lens** using parameters and questions below.
+
+**Keep index updated**: Run `qmd update` periodically to index new sessions.
 
 ---
 
@@ -81,16 +83,16 @@ python3 ~/.claude/skills/session-search/scripts/extract_conversations.py --days 
 
 **Follow-ups**: find-gaps → suggest `learn-anything`. extract-decisions → suggest `/updateclaudemd`.
 
-### Grep Signals
+### Search Patterns
 
-Use these patterns to find relevant sessions before extracting:
+Use these qmd queries to find relevant sessions before extracting:
 
-| Lens | Grep Pattern |
-|------|--------------|
-| extract-learnings | `learned\|realized\|understand now\|clicked\|got it` |
-| find-gaps | `confused\|don't understand\|struggling\|help with` |
-| extract-decisions | `decided\|chose\|instead of\|trade-off\|because` |
-| find-antipatterns | `again\|same mistake\|repeated\|forgot` |
+| Lens | Query |
+|------|-------|
+| extract-learnings | `qmd search "learned realized understand clicked" -c conversations -n 15 --files` |
+| find-gaps | `qmd search "confused struggling help with don't understand" -c conversations -n 15 --files` |
+| extract-decisions | `qmd search "decided chose instead of trade-off because" -c conversations -n 15 --files` |
+| find-antipatterns | `qmd search "again same mistake repeated forgot" -c conversations -n 15 --files` |
 
 ---
 
