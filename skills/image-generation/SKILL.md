@@ -1,11 +1,16 @@
 ---
-name: gemini-imagegen
-description: Generate and edit images using the Gemini API (Nano Banana). Use this skill when creating images from text prompts, editing existing images, applying style transfers, generating logos with text, creating stickers, product mockups, or any image generation/manipulation task. Supports text-to-image, image editing, multi-turn refinement, and composition from multiple reference images.
+name: image-generation
+description: >
+  Generate or edit images with Gemini Pro. Use when user says "generate an image",
+  "create a picture", "make me a logo", "edit this image", "remove the background",
+  "change the style", "combine these images", "add text to image", "style transfer",
+  "make a sticker", "product mockup", or any image creation/manipulation request.
+  Handles t2i (text-to-image), i2i (image-to-image editing), and multi-reference composition.
 ---
 
-# Gemini Image Generation
+# Image Generation
 
-Generate and edit images using Google's Gemini API. Requires `GEMINI_API_KEY` environment variable.
+Generate and edit images using Google's Gemini Pro Image API. Requires `GEMINI_API_KEY` environment variable.
 
 ## Default Output & Logging
 
@@ -63,11 +68,11 @@ Think like a photographer: describe lens, light, moment.
 - **Lifestyle**: Product in use context, natural setting, aspirational but authentic
 - **Hero shots**: Cinematic framing, dramatic lighting, space for text overlay
 
-### Logos & Text (Use Pro Model)
+### Logos & Text
 - Put text in quotes: `'Morning Brew Coffee Co'`
 - Describe typography: "clean bold sans-serif with generous letter-spacing"
 - Specify color scheme, shape constraints, design intent
-- Iterate with multi-turn chat for refinement
+- Iterate with follow-up edits for refinement
 
 ### Stylized Illustration
 - Name the style: "kawaii-style sticker", "anime-influenced", "vintage travel poster"
@@ -81,14 +86,14 @@ Think like a photographer: describe lens, light, moment.
 
 Pattern: Acknowledge → specify change → describe integration → preserve the rest
 
-### Multi-Image Composition (Pro Model)
+### Multi-Image Composition
 - State output goal first
 - Assign elements: "Take X from first image, Y from second"
 - Describe integration requirements (lighting match, realistic shadows)
 - Supports up to 14 reference images
 
 ### Character Consistency
-- Use multi-turn chat session for multiple views
+- Use follow-up edits for multiple views of the same character
 - Reference distinctive features explicitly in follow-ups
 - Include "exact same character" or "maintain all design details"
 - Save successful designs as reference for future prompts
@@ -116,37 +121,27 @@ This works for photography, animation, illustration, game art, graphic design, f
 
 ---
 
-## Models
+## Configuration
 
-| Model | Best For |
-|-------|----------|
-| `gemini-2.5-flash-image` | Speed, iteration, simple generation (1024px fixed) |
-| `gemini-3-pro-image-preview` | Text rendering, complex instructions, high-res (up to 4K), multi-image composition, Google Search grounding |
+### Aspect Ratios
+1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
 
-**Defaults**: Pro model uses 1K resolution, 1:1 aspect. Confirm with user before changing.
+### Resolutions
+- **1K** (~1024px) — default, fast
+- **2K** (~2048px) — high quality
+- **4K** (~4096px) — maximum detail
 
-### Image Configuration (Pro Only)
-
-**Aspect ratios**: 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
-**Resolutions**: 1K (~1024px), 2K (~2048px), 4K (~4096px)
+**Defaults**: 1K resolution, 1:1 aspect. Confirm with user before changing.
 
 ---
 
 ## Advanced Features
 
-### Google Search Grounding (Pro Only)
+### Google Search Grounding
 Enable with `--grounding` flag when real-time data helps:
 - Weather visualizations
 - Current events infographics
 - Real-world data charts
-
-### Multi-Turn Refinement
-Use chat for iterative editing instead of perfecting prompts in one shot:
-```
-→ "Create a logo for Acme Corp"
-→ "Make the text bolder"
-→ "Add a blue gradient background"
-```
 
 ### Semantic Masking
 No manual masking needed. Describe changes conversationally:
@@ -156,53 +151,61 @@ No manual masking needed. Describe changes conversationally:
 
 ---
 
-## Scripts
+## Script Usage
+
+One unified script handles all modes: t2i, i2i, and multi-reference composition.
 
 ```bash
-# Generate from prompt
-python scripts/generate_image.py "prompt" output.png [--model MODEL] [--aspect RATIO] [--size SIZE] [--grounding]
+# Text-to-image (t2i)
+uv run {baseDir}/scripts/generate.py --prompt "A serene mountain lake at dawn" --output landscape.png
 
-# Edit existing image
-python scripts/edit_image.py input.png "instruction" output.png [--model MODEL] [--aspect RATIO] [--size SIZE]
+# Image-to-image editing (i2i)
+uv run {baseDir}/scripts/generate.py --prompt "Make it sunset colors" --input photo.png --output edited.png
 
-# Compose multiple images
-python scripts/compose_images.py "instruction" output.png img1.png [img2.png ...] [--model MODEL] [--aspect RATIO] [--size SIZE]
+# Multi-reference composition (up to 14 images)
+uv run {baseDir}/scripts/generate.py --prompt "Combine the cat from image 1 with the background from image 2" --input cat.png --input background.png --output composite.png
 
-# Interactive multi-turn chat
-python scripts/multi_turn_chat.py [--model MODEL] [--output-dir DIR]
+# With options
+uv run {baseDir}/scripts/generate.py --prompt "Logo for 'Acme Corp'" --output logo.png --aspect 1:1 --resolution 2K
+
+# With Google Search grounding
+uv run {baseDir}/scripts/generate.py --prompt "Current weather in Tokyo visualized" --output weather.png --grounding
+
+# Batch generation (up to 4 images, 2 parallel requests)
+uv run {baseDir}/scripts/generate.py --prompt "A cat in different poses" --output cat.png --batch 4
+# Outputs: cat-1.png, cat-2.png, cat-3.png, cat-4.png
 ```
 
-Models: `gemini-2.5-flash-image` (default), `gemini-3-pro-image-preview`
+### Script Options
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--prompt` | `-p` | Image description or edit instruction (required) |
+| `--output` | `-o` | Output file path (required) |
+| `--input` | `-i` | Input image(s) for editing/composition (repeatable, up to 14) |
+| `--aspect` | `-a` | Aspect ratio (1:1, 16:9, 9:16, etc.) |
+| `--resolution` | `-r` | Output resolution: 1K, 2K, or 4K (default: auto-detect or 1K) |
+| `--grounding` | `-g` | Enable Google Search grounding |
+| `--batch` | `-b` | Generate multiple variations: 1-4 (default: 1, runs 2 parallel max) |
+
+### Auto-Resolution Detection
+
+When editing images, the script automatically detects appropriate resolution from input dimensions:
+- Input ≥3000px → 4K output
+- Input ≥1500px → 2K output
+- Otherwise → 1K output
+
+Override with explicit `--resolution` flag.
 
 ---
 
-## Core API Pattern
+## Recommended Defaults
 
-```python
-from google import genai
-from google.genai import types
+Unless the user specifies otherwise, use:
+- **Resolution**: 2K (good balance of quality and speed)
+- **Batch**: 3 (gives variety without overwhelming)
 
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-
-response = client.models.generate_content(
-    model="gemini-2.5-flash-image",
-    contents=["Your narrative prompt here"],
-    config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"])
-)
-
-for part in response.parts:
-    if part.inline_data:
-        # Save image from part.inline_data.data
-```
-
-For Pro model with configuration:
-```python
-config=types.GenerateContentConfig(
-    response_modalities=['TEXT', 'IMAGE'],
-    image_config=types.ImageConfig(aspectRatio="16:9", imageSize="2K"),
-    tools=[{"google_search": {}}]  # Optional grounding
-)
-```
+Only use 4K when high detail is explicitly needed (large prints, zoom-in requirements).
 
 ---
 
@@ -212,6 +215,5 @@ Before generating:
 - [ ] Narrative description (not keyword list)?
 - [ ] Camera/lighting details for photorealism?
 - [ ] Text in quotes, font style described?
-- [ ] Right model for task (Pro for text/complex)?
 - [ ] Aspect ratio appropriate for use case?
 - [ ] User preference: prescriptive or open?
