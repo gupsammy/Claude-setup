@@ -39,15 +39,9 @@ mcp-config.json
 settings.local.json
 .learn
 stats-cache.json
-# Note: Files that WILL be tracked (configuration you want to preserve):
-# - CLAUDE.md (global instructions)
-# - REPOSITORY_GUIDE.md (documentation)
-# - settings.json (main configuration)
-# - settings.local.json (local overrides)
-# - mcp-config.template.json (MCP configuration template - copy to mcp-config.json and add your tokens)
-# - commands/ (custom slash commands)
-# - agents/ (custom agents)
-# - output-styles/ (custom output styles)
-# - hooks/ (custom hooks)
-# - statusline scripts (statusline-script*.sh)
-# - plugins/ (all plugin content including downloaded repos)
+
+# Plugins (auto-managed by Claude Code)
+plugins/
+
+# Session corpus (generated search index)
+session-corpus/
