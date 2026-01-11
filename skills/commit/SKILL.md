@@ -6,6 +6,7 @@ description: >
   "stage and commit", or mentions committing code. Also triggers on "create a commit"
   or "commit what I've done".
 model: claude-sonnet-4-5 
+context: fork
 allowed-tools:
   - Bash
   - Read

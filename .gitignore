@@ -8,11 +8,13 @@ file-history/
 
 # Cache & Temporary Files
 cache/
+paste-cache/
 image-cache/
 debug/
 todos/
 downloads/
 ccnotify/
+chrome/
 
 # Runtime State Files
 security_warnings_state_*.json

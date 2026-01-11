@@ -6,6 +6,7 @@ description: >
   "make a PR", "submit for review", or mentions pushing code or creating PRs.
   Also triggers on "send this up", "open PR", "pr please".
 model: claude-sonnet-4-5
+context: fork
 allowed-tools:
   - Bash
   - Read
