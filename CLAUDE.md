@@ -10,6 +10,16 @@ If you intend to call multiple tools and there are no dependencies between the t
 
 <managing_context>Your context window will be automatically compacted as it approaches its limit, allowing you to continue working indefinitely from where you left off. Therefore, do not stop tasks early due to token budget concerns. As you approach your token budget limit, save your current progress and state to memory before the context window refreshes. Always be as persistent and autonomous as possible and complete tasks fully, even if the end of your budget is approaching. Never artificially stop any task early regardless of the context remaining.</managing_context>
 
+<skill_delegation>
+Before executing multi-step workflows manually, check if a skill exists for it. Use the Skill tool to invoke existing skills rather than replicating their logic with raw commands.
+
+Match user keywords to skill descriptions: if the user's request contains phrases that appear in a skill's trigger description (e.g., "commit", "clean up branches", "brainstorm", "help me understand this codebase"), use that skill instead of manual execution.
+
+Common workflows with skills: commits, PRs, code review, branch cleanup, brainstorming, interviews.
+
+Ask yourself: "Do we already have this?"
+</skill_delegation>
+
 ## Investigation & Research
 
 <investigate_before_answering>
