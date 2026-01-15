@@ -4,19 +4,7 @@ description: >
   Use when user says "brainstorm", "let's design", "help me think through",
   "I have an idea", "before I start coding", "explore approaches", or wants
   to refine rough ideas into designs through collaborative questioning.
-context: fork
 argument-hint: [topic]
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - Bash
-  - TodoWrite
-  - AskUserQuestion
-  - WebSearch
-  - WebFetch
 ---
 
 # Brainstorm Ideas Into Designs

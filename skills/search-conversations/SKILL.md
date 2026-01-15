@@ -28,14 +28,25 @@ python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py -
 
 ## Workflow
 
-1. **Search for keywords** with qmd (BM25 full-text search):
+1. **Identify the lens** from user intent (see Routing table below)
+
+2. **Extract recent context** using the script with lens-appropriate parameters:
    ```bash
-   qmd search "auth login session" -c conversations -n 10 --files
+   python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py --days N [flags]
    ```
+   Use the Parameters table to select `--days`, flags, and any supplementary data to gather.
 
-2. **Extract**: `python3 ... --paths /found/conv.jsonl`
+3. **Apply lens questions** to analyze the extracted conversations
 
-3. **Apply lens** using parameters and questions below.
+4. **Deepen the search** using what you learned from the initial extraction:
+   - Extract additional timeframes with the script (`--days 30`, `--all-projects`)
+   - Search for specific keywords, project names, or patterns that surfaced:
+     ```bash
+     qmd search "keyword from context" -c conversations -n 15 --files
+     ```
+   - Extract those specific paths: `python3 ... --paths /found/conv.jsonl`
+
+   This step surfaces older context, related discussions, or cross-project patterns that complement the initial extraction.
 
 **Keep index updated**: Run `qmd update` periodically to index new sessions.
 
@@ -83,9 +94,9 @@ python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py -
 
 **Follow-ups**: find-gaps → suggest `learn-anything`. extract-decisions → suggest `/updateclaudemd`.
 
-### Search Patterns
+### Supplementary Search Patterns
 
-Use these qmd queries to find relevant sessions before extracting:
+When recent extraction doesn't surface enough, use these qmd queries to find specific sessions:
 
 | Lens | Query |
 |------|-------|

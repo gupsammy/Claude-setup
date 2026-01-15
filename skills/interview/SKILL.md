@@ -4,16 +4,7 @@ description: >
   Use when user says "interview me about", "help me clarify", "stress-test my idea",
   "let's explore this concept", "deep dive into", "probe my assumptions",
   or needs structured questioning to refine and articulate their thinking.
-context: fork
-model: opus
 argument-hint: [topic] - optional topic to interview about
-allowed-tools:
-  - AskUserQuestion
-  - Read
-  - Grep
-  - Glob
-  - Write
-  - Edit
 ---
 
 # Interview

@@ -4,17 +4,7 @@ description: >
   Use when user asks to "create a skill", "make a command", "generate a prompt",
   "write a slash command", "build a Claude extension", or needs help crafting
   optimized skills and commands with proper frontmatter.
-context: fork
-model: sonnet
-argument-hint: [skill|command] [name] - or leave empty to interview
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - Task
+argument-hint: "[skill|command] [name] - or leave empty to interview"
 ---
 
 # Skill & Command Generator
@@ -46,6 +36,18 @@ Every token counts. LLM context is finite. Goal: smallest possible set of high-s
 **Progressive discovery:** Core instructions in main file, details in `references/` subdirectory. Just-in-time information > front-loaded context
 **Trust Claude:** Provide direction, not dictation. Claude extrapolates well from precise nudges.
 **Optimize Signal-to-Noise:** Clear, direct language over verbose explanations. High-value tokens that drive behavior
+
+### Degrees of Freedom
+
+Match specificity to the task's fragility and variability:
+
+| Level | When to Use | Format |
+|-------|-------------|--------|
+| **High freedom** | Multiple valid approaches, context-dependent decisions | Text instructions, heuristics |
+| **Medium freedom** | Preferred pattern exists, some variation acceptable | Pseudocode, scripts with parameters |
+| **Low freedom** | Fragile operations, consistency critical, specific sequence required | Exact scripts, few parameters |
+
+Think of it as path guidance: a narrow bridge with cliffs needs specific guardrails (low freedom), while an open field allows many routes (high freedom).
 
 ## Phase 1: Understand Requirements
 
@@ -163,15 +165,66 @@ Brief overview (1-2 sentences).
 | Exclamation + backticks | Execute bash command, include output |
 
 ### Progressive Disclosure
+
 For complex skills, organize into subdirectories:
 
 ```
 skill-name/
-├── SKILL.md          # Core instructions (1,500-2,000 words)
-├── references/       # Detailed docs (loaded on demand)
-├── examples/         # Working code samples
-└── scripts/          # Reusable utilities
+├── SKILL.md          # Core instructions (keep under 500 lines)
+├── scripts/          # Executable code (Python/Bash)
+├── references/       # Docs loaded into context as needed
+└── assets/           # Files used in output (templates, icons, fonts)
 ```
+
+**scripts/** - Deterministic, token-efficient. May be executed without loading into context. Use when the same code is rewritten repeatedly or reliability is critical.
+
+**references/** - Documentation Claude reads while working. Keeps SKILL.md lean. For files >100 lines, include a table of contents. Only load when needed.
+
+**assets/** - Files NOT loaded into context. Used in output: templates, images, fonts, boilerplate. Example: `assets/hello-world/` for a React template.
+
+#### Progressive Disclosure Patterns
+
+**Pattern 1: High-level guide with references**
+
+```markdown
+# PDF Processing
+
+## Quick start
+Extract text with pdfplumber:
+[code example]
+
+## Advanced features
+- **Form filling**: See references/forms.md
+- **API reference**: See references/api.md
+```
+
+Claude loads references only when needed.
+
+**Pattern 2: Domain-specific organization**
+
+```
+bigquery-skill/
+├── SKILL.md (overview and navigation)
+└── references/
+    ├── finance.md (revenue, billing)
+    ├── sales.md (pipeline, opportunities)
+    └── product.md (API usage, features)
+```
+
+When user asks about sales, Claude only reads sales.md.
+
+**Pattern 3: Variant-based organization**
+
+```
+cloud-deploy/
+├── SKILL.md (workflow + provider selection)
+└── references/
+    ├── aws.md
+    ├── gcp.md
+    └── azure.md
+```
+
+User chooses AWS → Claude only reads aws.md.
 
 ### Execution Modifiers
 
@@ -231,6 +284,31 @@ When presenting the generated skill/command to the user, briefly explain:
 - **What they might want to change** — "You may want to add more trigger phrases if this doesn't activate reliably"
 
 This transparency helps users understand the design and provide feedback.
+
+### Bundled Scripts
+
+This skill includes helper scripts to accelerate skill creation.
+
+**Initialize a new skill:**
+```bash
+~/.claude/skills/promptcraft/scripts/init_skill.py <name> --path <dir> [--resources scripts,references,assets] [--examples]
+```
+
+Creates a skill directory with templated SKILL.md and optional resource directories.
+
+**Validate a skill:**
+```bash
+~/.claude/skills/promptcraft/scripts/validate_skill.py <skill-directory>
+```
+
+Checks frontmatter format, naming conventions, description completeness, and body content.
+
+**Package for distribution:**
+```bash
+~/.claude/skills/promptcraft/scripts/package_skill.py <skill-directory> [output-dir]
+```
+
+Creates a `.skill` file (zip format) after validation passes.
 
 ## Phase 3: Deliver
 

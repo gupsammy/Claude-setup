@@ -83,6 +83,7 @@ Think like a photographer: describe lens, light, moment.
 - **Acknowledge subject**: "Using the provided image of my cat..."
 - **Explicit preservation**: "Keep everything unchanged except..."
 - **Realistic integration**: "should look naturally printed on the fabric"
+- **Image ordering**: Main image to edit should be **last** in `--input` list
 
 Pattern: Acknowledge → specify change → describe integration → preserve the rest
 
@@ -208,6 +209,10 @@ Unless the user specifies otherwise, use:
 Only use 4K when high detail is explicitly needed (large prints, zoom-in requirements).
 
 ---
+
+## Pre-Generation Confirmation
+
+Before running the script, show the user: (1) the exact prompt, (2) input images in order if editing/composing, (3) resolution and aspect ratio. Ask for confirmation before proceeding.
 
 ## Quick Checklist
 
