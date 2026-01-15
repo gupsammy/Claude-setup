@@ -25,7 +25,7 @@ Usage:
     uv run generate.py --prompt "Combine cat from first with background from second" \\
         --input cat.png --input background.png --output composite.png
 
-    # Batch generation (up to 4 images, 2 parallel requests)
+    # Batch generation (up to 4 images, async parallel)
     uv run generate.py --prompt "A cat in space" --output cat.png --batch 4
 
 Options:
@@ -42,9 +42,9 @@ Environment:
 """
 
 import argparse
+import asyncio
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -125,7 +125,15 @@ def extract_image_and_text(response):
     return image_response, text_response
 
 
-def generate_image(
+def copy_images(images: list) -> list:
+    """Create deep copies of PIL Images to avoid thread-safety issues."""
+    if not images:
+        return None
+    return [img.copy() for img in images]
+
+
+async def generate_image_async(
+    client,
     prompt: str,
     output_path: Path,
     input_images: list | None = None,
@@ -134,9 +142,10 @@ def generate_image(
     grounding: bool = False,
 ) -> str | None:
     """
-    Generate or edit an image.
+    Generate or edit an image asynchronously.
 
     Args:
+        client: The genai Client instance
         prompt: Text description or edit instruction
         output_path: Path to save the output image
         input_images: Optional list of PIL Image objects for editing/composition
@@ -147,14 +156,7 @@ def generate_image(
     Returns:
         Any text response from the model, or None
     """
-    from google import genai
     from google.genai import types
-
-    api_key = get_api_key()
-    if not api_key:
-        raise EnvironmentError("GEMINI_API_KEY environment variable not set")
-
-    client = genai.Client(api_key=api_key)
 
     # Auto-detect resolution if not specified
     if resolution is None:
@@ -184,7 +186,8 @@ def generate_image(
 
     config = types.GenerateContentConfig(**config_kwargs)
 
-    response = client.models.generate_content(
+    # Use async API - properly handles concurrent requests
+    response = await client.aio.models.generate_content(
         model=MODEL,
         contents=contents,
         config=config,
@@ -207,6 +210,108 @@ def generate_image(
         image.convert('RGB').save(str(output_path), 'PNG')
 
     return text_response
+
+
+async def generate_single(
+    client,
+    idx: int,
+    total: int,
+    out_path: Path,
+    prompt: str,
+    input_images: list | None,
+    aspect_ratio: str | None,
+    resolution: str | None,
+    grounding: bool,
+) -> tuple[int, Path, str | None, Exception | None]:
+    """Generate a single image, return (index, path, text, error)."""
+    try:
+        # Copy input images for this task to avoid concurrent access issues
+        task_images = copy_images(input_images)
+
+        text = await generate_image_async(
+            client=client,
+            prompt=prompt,
+            output_path=out_path,
+            input_images=task_images,
+            aspect_ratio=aspect_ratio,
+            resolution=resolution,
+            grounding=grounding,
+        )
+        return (idx, out_path, text, None)
+    except Exception as e:
+        return (idx, out_path, None, e)
+
+
+async def run_batch(
+    client,
+    output_paths: list[Path],
+    prompt: str,
+    input_images: list | None,
+    aspect_ratio: str | None,
+    resolution: str | None,
+    grounding: bool,
+) -> list[tuple[int, Path, str | None, Exception | None]]:
+    """Run batch generation using asyncio.gather for true async parallelism."""
+    total = len(output_paths)
+
+    tasks = [
+        generate_single(
+            client=client,
+            idx=i,
+            total=total,
+            out_path=path,
+            prompt=prompt,
+            input_images=input_images,
+            aspect_ratio=aspect_ratio,
+            resolution=resolution,
+            grounding=grounding,
+        )
+        for i, path in enumerate(output_paths, 1)
+    ]
+
+    # Run all tasks concurrently with asyncio.gather
+    return await asyncio.gather(*tasks)
+
+
+async def async_main(args, input_images, input_paths, output_paths):
+    """Async entry point for image generation."""
+    from google import genai
+
+    api_key = get_api_key()
+    if not api_key:
+        print("Error: GEMINI_API_KEY environment variable not set", file=sys.stderr)
+        sys.exit(1)
+
+    # Create a single client instance for all requests
+    client = genai.Client(api_key=api_key)
+
+    print("Generating...")
+
+    # Run batch with async parallelism
+    batch_results = await run_batch(
+        client=client,
+        output_paths=output_paths,
+        prompt=args.prompt,
+        input_images=input_images,
+        aspect_ratio=args.aspect,
+        resolution=args.resolution,
+        grounding=args.grounding,
+    )
+
+    # Process results
+    results = []
+    for idx, out_path, text, error in sorted(batch_results, key=lambda x: x[0]):
+        if error:
+            print(f"\n[{idx}/{args.batch}] Error: {error}", file=sys.stderr)
+        else:
+            full_path = out_path.resolve()
+            print(f"\n[{idx}/{args.batch}] Image saved: {full_path}")
+            print(f"MEDIA: {full_path}")
+            if text:
+                print(f"Model response: {text}")
+            results.append(full_path)
+
+    return results
 
 
 def main():
@@ -275,6 +380,8 @@ def main():
         for img_path in args.inputs:
             try:
                 img = Image.open(img_path)
+                # Load image data into memory to avoid file handle issues
+                img.load()
                 input_images.append(img)
                 input_paths.append(img_path)
                 print(f"Loaded: {img_path} ({img.size[0]}x{img.size[1]})")
@@ -298,7 +405,7 @@ def main():
     if args.grounding:
         print("Google Search grounding: enabled")
     if args.batch > 1:
-        print(f"Batch: {args.batch} images (2 parallel)")
+        print(f"Batch: {args.batch} images (async parallel)")
 
     # Generate output paths for batch
     if args.batch == 1:
@@ -309,44 +416,8 @@ def main():
         parent = output_path.parent
         output_paths = [parent / f"{stem}-{i}{suffix}" for i in range(1, args.batch + 1)]
 
-    print(f"Generating...")
-
-    def generate_single(idx: int, out_path: Path) -> tuple[int, Path, str | None, Exception | None]:
-        """Generate a single image, return (index, path, text, error)."""
-        try:
-            text = generate_image(
-                prompt=args.prompt,
-                output_path=out_path,
-                input_images=input_images,
-                aspect_ratio=args.aspect,
-                resolution=args.resolution,
-                grounding=args.grounding,
-            )
-            return (idx, out_path, text, None)
-        except Exception as e:
-            return (idx, out_path, None, e)
-
-    # Execute with max 2 parallel workers
-    max_workers = min(2, args.batch)
-    results = []
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(generate_single, i, path): i
-            for i, path in enumerate(output_paths, 1)
-        }
-
-        for future in as_completed(futures):
-            idx, out_path, text, error = future.result()
-            if error:
-                print(f"\n[{idx}/{args.batch}] Error: {error}", file=sys.stderr)
-            else:
-                full_path = out_path.resolve()
-                print(f"\n[{idx}/{args.batch}] Image saved: {full_path}")
-                print(f"MEDIA: {full_path}")
-                if text:
-                    print(f"Model response: {text}")
-                results.append(full_path)
+    # Run async main
+    results = asyncio.run(async_main(args, input_images, input_paths, output_paths))
 
     if not results:
         print("Error: No images were generated", file=sys.stderr)
