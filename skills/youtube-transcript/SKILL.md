@@ -1,6 +1,8 @@
 ---
 name: youtube-transcript
 description: Download YouTube video transcripts when user provides a YouTube URL or asks to download/get/fetch a transcript from YouTube. Also use when user wants to transcribe or get captions/subtitles from a YouTube video.
+context: fork
+model: claude-sonnet-4-5
 ---
 
 # YouTube Transcript Downloader

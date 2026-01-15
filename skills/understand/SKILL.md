@@ -5,7 +5,7 @@ description: >
   "how does this project work", "analyze this repo", "understand the code",
   or wants to learn how an unfamiliar codebase is structured.
 agent: Explore
-model: haiku
+model: claude-sonnet-4-5
 allowed-tools:
   - Read
   - Glob

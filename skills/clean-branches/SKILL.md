@@ -4,7 +4,7 @@ description: >
   Use when user says "clean up branches", "delete merged branches",
   "prune stale branches", "git branch cleanup", "remove old branches",
   or wants to safely remove merged or stale git branches.
-model: haiku
+model: claude-sonnet-4-5
 argument-hint: [branch-pattern] - optional pattern to filter branches
 allowed-tools:
   - Bash(git:*)
