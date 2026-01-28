@@ -76,6 +76,43 @@ def detect_resolution(images: list) -> str:
     return "1K"
 
 
+# Supported aspect ratios for auto-detection
+SUPPORTED_RATIOS = [
+    ("1:1", 1.0),
+    ("2:3", 2/3),
+    ("3:2", 3/2),
+    ("3:4", 3/4),
+    ("4:3", 4/3),
+    ("4:5", 4/5),
+    ("5:4", 5/4),
+    ("9:16", 9/16),
+    ("16:9", 16/9),
+    ("21:9", 21/9),
+]
+
+
+def get_closest_aspect_ratio(width: int, height: int) -> str:
+    """Find closest supported aspect ratio for given dimensions."""
+    actual_ratio = width / height
+    closest = min(SUPPORTED_RATIOS, key=lambda x: abs(x[1] - actual_ratio))
+    return closest[0]
+
+
+MAX_DIMENSION = 2048
+
+
+def optimize_image(img, max_dim=MAX_DIMENSION):
+    """Resize if larger than max_dim, preserving aspect ratio."""
+    from PIL import Image
+    width, height = img.size
+    if max(width, height) <= max_dim:
+        return img
+
+    scale = max_dim / max(width, height)
+    new_size = (round(width * scale), round(height * scale))
+    return img.resize(new_size, Image.Resampling.LANCZOS)
+
+
 def save_prompt_log(
     log_path: Path,
     prompt: str,
@@ -382,12 +419,28 @@ def main():
                 img = Image.open(img_path)
                 # Load image data into memory to avoid file handle issues
                 img.load()
+                original_size = img.size
+                img = optimize_image(img)
                 input_images.append(img)
                 input_paths.append(img_path)
-                print(f"Loaded: {img_path} ({img.size[0]}x{img.size[1]})")
+                if img.size != original_size:
+                    print(f"Loaded: {img_path} ({original_size[0]}x{original_size[1]} → {img.size[0]}x{img.size[1]})")
+                else:
+                    print(f"Loaded: {img_path} ({img.size[0]}x{img.size[1]})")
             except Exception as e:
                 print(f"Error loading {img_path}: {e}", file=sys.stderr)
                 sys.exit(1)
+
+    # Auto-detect aspect ratio from last reference image if not specified
+    if args.aspect:
+        print(f"Aspect ratio: {args.aspect}")
+    elif input_images:
+        last_img = input_images[-1]
+        args.aspect = get_closest_aspect_ratio(last_img.width, last_img.height)
+        print(f"Auto aspect ratio: {args.aspect} (from last reference image)")
+    else:
+        args.aspect = "1:1"
+        print(f"Auto aspect ratio: {args.aspect} (default)")
 
     # Determine mode for display
     if not input_images:
@@ -400,8 +453,6 @@ def main():
     resolution = args.resolution or detect_resolution(input_images or [])
     print(f"Mode: {mode}")
     print(f"Resolution: {resolution}")
-    if args.aspect:
-        print(f"Aspect ratio: {args.aspect}")
     if args.grounding:
         print("Google Search grounding: enabled")
     if args.batch > 1:

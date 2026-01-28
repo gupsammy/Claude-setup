@@ -132,7 +132,7 @@ This works for photography, animation, illustration, game art, graphic design, f
 - **2K** (~2048px) — high quality
 - **4K** (~4096px) — maximum detail
 
-**Defaults**: 1K resolution, 1:1 aspect. Confirm with user before changing.
+**Defaults**: 1K resolution, aspect ratio auto-detected from last reference image (or 1:1 if no images).
 
 ---
 
@@ -184,7 +184,7 @@ uv run {baseDir}/scripts/generate.py --prompt "A cat in different poses" --outpu
 | `--prompt` | `-p` | Image description or edit instruction (required) |
 | `--output` | `-o` | Output file path (required) |
 | `--input` | `-i` | Input image(s) for editing/composition (repeatable, up to 14) |
-| `--aspect` | `-a` | Aspect ratio (1:1, 16:9, 9:16, etc.) |
+| `--aspect` | `-a` | Aspect ratio (auto-detects from last reference image, or 1:1) |
 | `--resolution` | `-r` | Output resolution: 1K, 2K, or 4K (default: auto-detect or 1K) |
 | `--grounding` | `-g` | Enable Google Search grounding |
 | `--batch` | `-b` | Generate multiple variations: 1-4 (default: 1, runs 2 parallel max) |
@@ -197,6 +197,18 @@ When editing images, the script automatically detects appropriate resolution fro
 - Otherwise → 1K output
 
 Override with explicit `--resolution` flag.
+
+### Auto Aspect Ratio Detection
+
+When no `--aspect` flag is provided:
+- **With reference images**: Detects from the **last** input image (closest supported ratio)
+- **Without reference images (t2i)**: Defaults to 1:1
+
+This matches typical editing workflows where the last image is the canvas being edited.
+
+### Image Optimization
+
+Large input images (>2048px) are automatically resized before sending to the API to prevent timeout errors. The script uses high-quality LANCZOS resampling to preserve detail during downscaling. Original files are never modified.
 
 ---
 
