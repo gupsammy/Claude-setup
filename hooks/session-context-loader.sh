@@ -34,7 +34,7 @@ if [ -z "$CWD" ] || [ -z "$SESSION_ID" ]; then
 fi
 
 # Find project's session directory
-CLAUDE_PROJECT_PATH=$(echo "$CWD" | sed 's/[\/.]/-/g')
+CLAUDE_PROJECT_PATH=$(echo "$CWD" | sed 's/[\/. ]/-/g')
 SESSIONS_DIR="$HOME/.claude/projects/$CLAUDE_PROJECT_PATH"
 
 if [ ! -d "$SESSIONS_DIR" ]; then
