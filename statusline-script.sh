@@ -13,7 +13,7 @@ fi
 
 # Minimal color palette - 3 contrasting colors for light/dark themes
 PRIMARY='\033[96m'   # Cyan - primary info (bright, readable)
-SECONDARY='\033[93m' # Yellow - secondary info (warm contrast)
+SECONDARY='\033[38;5;136m' # Yellow - dark khaki/olive for better contrast
 ACCENT='\033[95m'    # Magenta - accents and highlights (pop color)
 WHITE='\033[97m'     # White - for emphasis
 GRAY='\033[90m'      # Gray - for subdued elements
