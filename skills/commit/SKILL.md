@@ -91,7 +91,7 @@ Use conventional commit format:
 
 ### 6. Push (if requested)
 
-If user mentions "push" or arguments contain "push", use `Skill: push-pr` to push and optionally create a PR.
+If user mentions "push" or arguments contain "push", then push using git push.
 
 ## Output
 
