@@ -8,7 +8,8 @@
     "deny": [
       "Read(./.DS_Store)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "dontAsk",
+    "allow": []
   },
   "model": "opus",
   "hooks": {
