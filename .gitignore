@@ -45,3 +45,6 @@ plugins/
 
 # Session corpus (generated search index)
 session-corpus/
+
+# Task management (per-session todo lists)
+tasks/

@@ -3,13 +3,13 @@
     "type": "command",
     "command": "~/.claude/file-suggestion.sh"
   },
-  "cleanupPeriodDays": 90,
+  "cleanupPeriodDays": 30,
   "permissions": {
+    "allow": [],
     "deny": [
       "Read(./.DS_Store)"
     ],
-    "defaultMode": "dontAsk",
-    "allow": []
+    "defaultMode": "dontAsk"
   },
   "model": "opus",
   "hooks": {
@@ -52,7 +52,7 @@
     "padding": 0.5
   },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": false,
     "context7@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": true,
     "figma@claude-plugins-official": false,
@@ -61,8 +61,11 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
-    "huggingface-skills@claude-plugins-official": true,
-    "plugin-dev@claude-plugins-official": true
+    "huggingface-skills@claude-plugins-official": false,
+    "plugin-dev@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "playground@claude-plugins-official": true
   },
   "forceLoginMethod": "claudeai",
   "syntaxHighlightingDisabled": false,
