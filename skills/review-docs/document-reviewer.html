@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Reviewer</title>
+  <style>
+    /* ===========================================
+       TOKYO NIGHT THEME - Auto-detects system preference
+       Dark: Tokyo Night Storm | Light: Tokyo Night Day
+       =========================================== */
+
+    :root {
+      /* Tokyo Night Storm (Dark) - Default */
+      --bg-primary: #24283b;
+      --bg-secondary: #1f2335;
+      --bg-tertiary: #292e42;
+      --bg-hover: #3b4261;
+      --border: #3b4261;
+      --border-active: #7aa2f7;
+      --text-primary: #c0caf5;
+      --text-secondary: #9aa5ce;
+      --text-muted: #565f89;
+      --accent: #7aa2f7;
+      --accent-muted: rgba(122, 162, 247, 0.15);
+      --success: #9ece6a;
+      --success-muted: rgba(158, 206, 106, 0.15);
+      --warning: #e0af68;
+      --danger: #f7768e;
+      --danger-muted: rgba(247, 118, 142, 0.15);
+      --addition-bg: rgba(158, 206, 106, 0.15);
+      --deletion-bg: rgba(247, 118, 142, 0.15);
+      --purple: #bb9af7;
+      --cyan: #7dcfff;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+      --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* Tokyo Night Day (Light) */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-primary: #e1e2e7;
+        --bg-secondary: #d5d6db;
+        --bg-tertiary: #c8c9ce;
+        --bg-hover: #b8b9be;
+        --border: #b8b9be;
+        --border-active: #2e7de9;
+        --text-primary: #3760bf;
+        --text-secondary: #6172b0;
+        --text-muted: #8990b3;
+        --accent: #2e7de9;
+        --accent-muted: rgba(46, 125, 233, 0.15);
+        --success: #587539;
+        --success-muted: rgba(88, 117, 57, 0.15);
+        --warning: #8c6c3e;
+        --danger: #f52a65;
+        --danger-muted: rgba(245, 42, 101, 0.12);
+        --addition-bg: rgba(88, 117, 57, 0.12);
+        --deletion-bg: rgba(245, 42, 101, 0.12);
+        --purple: #9854f1;
+        --cyan: #007197;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-title svg { width: 20px; height: 20px; color: var(--accent); }
+
+    .skill-name {
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: var(--accent-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .header-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mode-toggle {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .mode-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .mode-btn:hover { color: var(--text-primary); }
+    .mode-btn.active { background: var(--bg-hover); color: var(--text-primary); }
+
+    .diff-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .toggle-switch {
+      width: 36px;
+      height: 20px;
+      background: var(--bg-hover);
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-switch.active { background: var(--accent); }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch.active::after { transform: translateX(16px); }
+
+    /* Main layout */
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: all 0.1s;
+    }
+
+    .tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .tree-item.active { background: var(--accent-muted); color: var(--accent); }
+    .tree-item.folder { font-weight: 500; color: var(--text-primary); }
+    .tree-item.nested { padding-left: 32px; }
+    .tree-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .tree-item .badge {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: var(--accent-muted);
+      color: var(--accent);
+    }
+
+    .tree-item .new-badge {
+      background: var(--success-muted);
+      color: var(--success);
+    }
+
+    /* Content area */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* File tabs */
+    .file-tabs {
+      display: flex;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .file-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-right: 1px solid var(--border);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.1s;
+    }
+
+    .file-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+    .file-tab.active {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: -1px;
+    }
+
+    .file-tab svg { width: 14px; height: 14px; }
+
+    .file-tab .close-btn {
+      margin-left: 4px;
+      opacity: 0;
+      transition: opacity 0.1s;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .file-tab:hover .close-btn { opacity: 0.5; }
+    .file-tab .close-btn:hover { opacity: 1; }
+
+    /* Document viewer */
+    .viewer-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .document-view {
+      flex: 1;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .doc-line {
+      display: flex;
+      padding: 0 16px;
+      min-height: 24px;
+      border-left: 3px solid transparent;
+      transition: all 0.1s;
+    }
+
+    .doc-line:hover { background: var(--bg-tertiary); cursor: pointer; }
+    .doc-line.has-comment { border-left-color: var(--accent); background: var(--accent-muted); }
+    .doc-line.selected { background: var(--accent-muted); }
+    .doc-line.addition { background: var(--addition-bg); border-left-color: var(--success); }
+    .doc-line.deletion { background: var(--deletion-bg); border-left-color: var(--danger); opacity: 0.7; }
+
+    .line-num {
+      width: 50px;
+      text-align: right;
+      padding-right: 16px;
+      color: var(--text-muted);
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .line-content {
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .line-comment-indicator { margin-left: 8px; }
+
+    /* Markdown rendering */
+    .line-content h1, .line-content h2, .line-content h3 { font-weight: 600; color: var(--text-primary); }
+    .line-content h1 { font-size: 1.4em; }
+    .line-content h2 { font-size: 1.2em; }
+    .line-content code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+    .line-content strong { font-weight: 600; }
+
+    /* Comments panel */
+    .comments-panel {
+      width: 320px;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width 0.2s, opacity 0.2s;
+    }
+
+    .comments-panel.collapsed { width: 0; opacity: 0; overflow: hidden; }
+
+    .comments-header {
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .comments-count {
+      background: var(--accent-muted);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .comment-card {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .comment-card:hover { border-color: var(--border-active); }
+
+    .comment-location {
+      font-size: 11px;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      margin-bottom: 8px;
+    }
+
+    .comment-context {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      background: var(--bg-primary);
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      max-height: 60px;
+      overflow: hidden;
+    }
+
+    .comment-text { font-size: 13px; line-height: 1.5; }
+
+    .comment-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .comment-action-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .comment-action-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .comment-action-btn.delete:hover { color: var(--danger); }
+
+    /* Inline comment box */
+    .inline-comment-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 8px 16px 8px 66px;
+      padding: 12px;
+      display: none;
+    }
+
+    .inline-comment-box.active { display: block; }
+
+    .inline-comment-box textarea {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      padding: 10px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .inline-comment-box textarea:focus { outline: none; border-color: var(--accent); }
+
+    .inline-comment-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.1s;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #79b8ff; }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    /* Prompt output */
+    .prompt-panel {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      flex-shrink: 0;
+    }
+
+    .prompt-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .prompt-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .prompt-actions { display: flex; gap: 8px; }
+
+    .prompt-content {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .prompt-content.empty { color: var(--text-muted); font-style: italic; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--success);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* Loading state */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 40px;
+    }
+
+    .loading-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.5; }
+    .loading-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text-secondary); }
+    .loading-state p { font-size: 13px; }
+    .loading-state code { background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--bg-tertiary);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      Document Reviewer
+    </div>
+    <span class="skill-name" id="skillName">Waiting for data...</span>
+    <button class="btn btn-primary" onclick="openFolder()" style="margin-left: 8px;">📂 Open Folder</button>
+    <button class="btn btn-secondary" onclick="showLoadModal()" style="margin-left: 4px;">📋 Paste JSON</button>
+
+    <div class="header-actions">
+      <div class="diff-toggle" id="diffToggleContainer" style="display: none;">
+        <span>Show Diff</span>
+        <div class="toggle-switch" id="diffToggle" onclick="toggleDiff()"></div>
+      </div>
+
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="view" onclick="setMode('view')">View</button>
+        <button class="mode-btn" data-mode="review" onclick="setMode('review')">Review</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="sidebar">
+      <div class="sidebar-header">Explorer</div>
+      <div class="file-tree" id="fileTree">
+        <div class="loading-state">
+          <p>No files loaded</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="file-tabs" id="fileTabs"></div>
+
+      <div class="viewer-container">
+        <div class="document-view" id="documentView">
+          <div class="loading-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin-bottom:16px;opacity:0.5;">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <h3>No folder loaded</h3>
+            <p>Click <strong>📂 Open Folder</strong> to select a skill or code folder</p>
+            <p style="margin-top:12px;font-size:11px;color:var(--text-muted);">Skills are in <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:3px;">~/.claude/skills/</code></p>
+          </div>
+        </div>
+
+        <div class="comments-panel collapsed" id="commentsPanel">
+          <div class="comments-header">
+            <span>Comments</span>
+            <span class="comments-count" id="commentsCount">0</span>
+          </div>
+          <div class="comments-list" id="commentsList"></div>
+        </div>
+      </div>
+
+      <div class="prompt-panel">
+        <div class="prompt-header">
+          <span class="prompt-title">Feedback for Claude</span>
+          <div class="prompt-actions">
+            <button class="btn btn-secondary" onclick="copyPrompt('json')">Copy JSON</button>
+            <button class="btn btn-primary" onclick="copyPrompt('markdown')">Copy Markdown</button>
+          </div>
+        </div>
+        <div class="prompt-content empty" id="promptContent">
+          Switch to Review mode and click on any line to add comments. Your feedback will appear here.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied to clipboard!</div>
+
+  <!-- Load Modal -->
+  <div id="loadModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-secondary); border-radius:12px; padding:24px; width:90%; max-width:600px; max-height:80vh; display:flex; flex-direction:column;">
+      <h3 style="margin-bottom:16px; font-size:16px;">Paste Skill Data (JSON)</h3>
+      <textarea id="dataInput" style="flex:1; min-height:300px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:var(--font-mono); font-size:12px; padding:12px; resize:none;"></textarea>
+      <div style="display:flex; gap:8px; margin-top:16px; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="hideLoadModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="loadFromModal()">Load</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===========================================
+    // STATE
+    // ===========================================
+    const state = {
+      name: '',
+      path: '',
+      files: [],
+      openTabs: [],
+      activeFile: null,
+      showDiff: false,
+      mode: 'view',
+      comments: {},
+      selectedLine: null,
+      hasDiffs: false
+    };
+
+    // ===========================================
+    // PUBLIC API - Called by Claude via JS injection
+    // ===========================================
+    window.loadSkillData = function(data) {
+      console.log('[Reviewer] Loading data:', data.name);
+
+      state.name = data.name || 'Untitled';
+      state.path = data.path || '';
+      state.files = data.files || [];
+      state.openTabs = [];
+      state.activeFile = null;
+      state.comments = {};
+      state.hasDiffs = state.files.some(f => f.oldContent);
+
+      document.getElementById('skillName').textContent = state.name;
+
+      // Show diff toggle if any files have diffs
+      document.getElementById('diffToggleContainer').style.display =
+        state.hasDiffs ? 'flex' : 'none';
+
+      renderFileTree();
+
+      // Auto-open first file
+      if (state.files.length > 0) {
+        openFile(state.files[0].id);
+      }
+
+      showToast(`Loaded ${state.files.length} file(s)`);
+    };
+
+    // Expose for checking if ready
+    window.isReviewerReady = true;
+
+    // ===========================================
+    // FILE TREE
+    // ===========================================
+    function renderFileTree() {
+      const tree = document.getElementById('fileTree');
+
+      if (state.files.length === 0) {
+        tree.innerHTML = '<div class="loading-state"><p>No files loaded</p></div>';
+        return;
+      }
+
+      // Group by folders
+      const folders = {};
+      const rootFiles = [];
+
+      state.files.forEach(file => {
+        const parts = file.name.split('/');
+        if (parts.length > 1) {
+          const folder = parts.slice(0, -1).join('/');
+          if (!folders[folder]) folders[folder] = [];
+          folders[folder].push({ ...file, shortName: parts[parts.length - 1] });
+        } else {
+          rootFiles.push(file);
+        }
+      });
+
+      let html = '';
+
+      // Root files
+      rootFiles.forEach(file => {
+        const commentCount = state.comments[file.id] ? Object.keys(state.comments[file.id]).length : 0;
+        const isNew = file.isNew || !file.oldContent;
+        html += `
+          <div class="tree-item ${state.activeFile === file.id ? 'active' : ''}" onclick="openFile('${file.id}')">
+            ${getFileIcon(file.name)}
+            <span>${file.name}</span>
+            ${file.isNew ? '<span class="badge new-badge">new</span>' : ''}
+            ${commentCount > 0 ? `<span class="badge">${commentCount}</span>` : ''}
+          </div>
+        `;
+      });
+
+      // Folders
+      Object.keys(folders).forEach(folderName => {
+        html += `
+          <div class="tree-item folder">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+            <span>${folderName}</span>
+          </div>
+        `;
+        folders[folderName].forEach(file => {
+          const commentCount = state.comments[file.id] ? Object.keys(state.comments[file.id]).length : 0;
+          html += `
+            <div class="tree-item nested ${state.activeFile === file.id ? 'active' : ''}" onclick="openFile('${file.id}')">
+              ${getFileIcon(file.shortName)}
+              <span>${file.shortName}</span>
+              ${file.isNew ? '<span class="badge new-badge">new</span>' : ''}
+              ${commentCount > 0 ? `<span class="badge">${commentCount}</span>` : ''}
+            </div>
+          `;
+        });
+      });
+
+      tree.innerHTML = html;
+    }
+
+    function getFileIcon(name) {
+      if (name.endsWith('.md')) {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      }
+      if (name.endsWith('.py')) {
+        return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93z"/></svg>';
+      }
+      if (name.endsWith('.js') || name.endsWith('.ts')) {
+        return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm16.525 13.707c-.131-.821-.666-1.511-2.252-2.155-.552-.259-1.165-.438-1.349-.854-.068-.248-.078-.382-.034-.529.113-.484.687-.629 1.137-.495.293.09.563.315.732.676.775-.507.775-.507 1.316-.844-.203-.314-.304-.451-.439-.586-.473-.528-1.103-.798-2.126-.775l-.528.067c-.507.124-.991.395-1.283.754-.855.968-.608 2.655.427 3.354 1.023.765 2.521.933 2.712 1.653.18.878-.652 1.159-1.475 1.058-.607-.136-.945-.439-1.316-1.002l-1.372.788c.157.359.337.517.607.832 1.305 1.316 4.568 1.249 5.153-.754.021-.067.18-.528.056-1.237z"/></svg>';
+      }
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+    }
+
+    // ===========================================
+    // TABS & FILES
+    // ===========================================
+    function openFile(fileId) {
+      const file = state.files.find(f => f.id === fileId);
+      if (!file) return;
+
+      if (!state.openTabs.includes(fileId)) {
+        state.openTabs.push(fileId);
+      }
+
+      state.activeFile = fileId;
+      state.selectedLine = null;
+
+      renderFileTree();
+      renderTabs();
+      renderDocument();
+      renderComments();
+    }
+
+    function closeTab(fileId, e) {
+      e.stopPropagation();
+      const idx = state.openTabs.indexOf(fileId);
+      if (idx > -1) {
+        state.openTabs.splice(idx, 1);
+        if (state.activeFile === fileId) {
+          state.activeFile = state.openTabs[Math.max(0, idx - 1)] || null;
+        }
+      }
+      renderTabs();
+      renderDocument();
+      renderComments();
+    }
+
+    function renderTabs() {
+      const tabs = document.getElementById('fileTabs');
+      if (state.openTabs.length === 0) {
+        tabs.innerHTML = '';
+        return;
+      }
+
+      tabs.innerHTML = state.openTabs.map(fileId => {
+        const file = state.files.find(f => f.id === fileId);
+        const shortName = file.name.split('/').pop();
+        return `
+          <div class="file-tab ${state.activeFile === fileId ? 'active' : ''}" onclick="openFile('${fileId}')">
+            ${getFileIcon(shortName)}
+            <span>${shortName}</span>
+            <span class="close-btn" onclick="closeTab('${fileId}', event)">×</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ===========================================
+    // DOCUMENT RENDERING
+    // ===========================================
+    function renderDocument() {
+      const view = document.getElementById('documentView');
+
+      if (!state.activeFile) {
+        view.innerHTML = `
+          <div class="loading-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <h3>No file selected</h3>
+            <p>Select a file from the sidebar</p>
+          </div>
+        `;
+        return;
+      }
+
+      const file = state.files.find(f => f.id === state.activeFile);
+      const lines = file.content.split('\n');
+      const fileComments = state.comments[file.id] || {};
+
+      let html = '';
+
+      if (state.showDiff && file.oldContent) {
+        // Simple diff view
+        const oldLines = file.oldContent.split('\n');
+        const diff = computeSimpleDiff(oldLines, lines);
+
+        diff.forEach((item, idx) => {
+          const lineClass = item.type === 'add' ? 'addition' : item.type === 'del' ? 'deletion' : '';
+          const hasComment = fileComments[idx];
+
+          html += `
+            <div class="doc-line ${lineClass} ${hasComment ? 'has-comment' : ''}"
+                 data-line="${idx}" onclick="selectLine(${idx})">
+              <span class="line-num">${item.num || ''}</span>
+              <span class="line-content">${renderMarkdown(escapeHtml(item.content))}</span>
+              ${hasComment ? '<span class="line-comment-indicator">💬</span>' : ''}
+            </div>
+            ${renderCommentBox(idx, item.content, hasComment)}
+          `;
+        });
+      } else {
+        // Normal view
+        lines.forEach((line, idx) => {
+          const lineNum = idx + 1;
+          const hasComment = fileComments[lineNum];
+
+          html += `
+            <div class="doc-line ${hasComment ? 'has-comment' : ''} ${state.selectedLine === lineNum ? 'selected' : ''}"
+                 data-line="${lineNum}" onclick="selectLine(${lineNum})">
+              <span class="line-num">${lineNum}</span>
+              <span class="line-content">${renderMarkdown(escapeHtml(line))}</span>
+              ${hasComment ? '<span class="line-comment-indicator">💬</span>' : ''}
+            </div>
+            ${renderCommentBox(lineNum, line, hasComment)}
+          `;
+        });
+      }
+
+      view.innerHTML = html;
+    }
+
+    function computeSimpleDiff(oldLines, newLines) {
+      // Very simple diff - just show all lines with markers for changes
+      const result = [];
+      const maxLen = Math.max(oldLines.length, newLines.length);
+
+      for (let i = 0; i < maxLen; i++) {
+        if (i >= oldLines.length) {
+          result.push({ type: 'add', content: newLines[i], num: i + 1 });
+        } else if (i >= newLines.length) {
+          result.push({ type: 'del', content: oldLines[i], num: '' });
+        } else if (oldLines[i] !== newLines[i]) {
+          result.push({ type: 'del', content: oldLines[i], num: '' });
+          result.push({ type: 'add', content: newLines[i], num: i + 1 });
+        } else {
+          result.push({ type: 'context', content: newLines[i], num: i + 1 });
+        }
+      }
+
+      return result;
+    }
+
+    function renderCommentBox(lineNum, context, existing) {
+      const comment = state.comments[state.activeFile]?.[lineNum];
+      return `
+        <div class="inline-comment-box ${state.selectedLine === lineNum ? 'active' : ''}" id="comment-box-${lineNum}">
+          <textarea id="textarea-${lineNum}" placeholder="Add your feedback...">${comment?.text || ''}</textarea>
+          <div class="inline-comment-actions">
+            <button class="btn btn-secondary" onclick="cancelComment()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveComment(${lineNum})">Save</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMarkdown(text) {
+      if (text.startsWith('# ')) return `<h1>${text.slice(2)}</h1>`;
+      if (text.startsWith('## ')) return `<h2>${text.slice(3)}</h2>`;
+      if (text.startsWith('### ')) return `<h3>${text.slice(4)}</h3>`;
+
+      text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+      text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+      return text;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ===========================================
+    // COMMENTS
+    // ===========================================
+    function selectLine(lineNum) {
+      if (state.mode !== 'review') return;
+
+      state.selectedLine = state.selectedLine === lineNum ? null : lineNum;
+      renderDocument();
+
+      if (state.selectedLine) {
+        setTimeout(() => {
+          const textarea = document.getElementById(`textarea-${lineNum}`);
+          if (textarea) textarea.focus();
+        }, 50);
+      }
+    }
+
+    function saveComment(lineNum) {
+      const textarea = document.getElementById(`textarea-${lineNum}`);
+      const text = textarea.value.trim();
+
+      if (!state.comments[state.activeFile]) {
+        state.comments[state.activeFile] = {};
+      }
+
+      if (text) {
+        const file = state.files.find(f => f.id === state.activeFile);
+        const lines = file.content.split('\n');
+        state.comments[state.activeFile][lineNum] = {
+          text,
+          context: lines[lineNum - 1] || ''
+        };
+      } else {
+        delete state.comments[state.activeFile][lineNum];
+      }
+
+      state.selectedLine = null;
+      renderDocument();
+      renderComments();
+      renderFileTree();
+      updatePrompt();
+    }
+
+    function cancelComment() {
+      state.selectedLine = null;
+      renderDocument();
+    }
+
+    function deleteComment(fileId, lineNum, e) {
+      e.stopPropagation();
+      if (state.comments[fileId]) {
+        delete state.comments[fileId][lineNum];
+        if (Object.keys(state.comments[fileId]).length === 0) {
+          delete state.comments[fileId];
+        }
+      }
+      renderDocument();
+      renderComments();
+      renderFileTree();
+      updatePrompt();
+    }
+
+    function jumpToComment(fileId, lineNum) {
+      if (state.activeFile !== fileId) openFile(fileId);
+      setTimeout(() => {
+        const el = document.querySelector(`[data-line="${lineNum}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('selected');
+          setTimeout(() => el.classList.remove('selected'), 2000);
+        }
+      }, 100);
+    }
+
+    function renderComments() {
+      const list = document.getElementById('commentsList');
+      const countEl = document.getElementById('commentsCount');
+
+      let total = 0;
+      let html = '';
+
+      Object.keys(state.comments).forEach(fileId => {
+        const file = state.files.find(f => f.id === fileId);
+        Object.keys(state.comments[fileId]).forEach(lineNum => {
+          total++;
+          const c = state.comments[fileId][lineNum];
+          html += `
+            <div class="comment-card" onclick="jumpToComment('${fileId}', ${lineNum})">
+              <div class="comment-location">${file?.name || fileId}:${lineNum}</div>
+              <div class="comment-context">${escapeHtml(c.context)}</div>
+              <div class="comment-text">${escapeHtml(c.text)}</div>
+              <div class="comment-actions">
+                <button class="comment-action-btn delete" onclick="deleteComment('${fileId}', ${lineNum}, event)">Delete</button>
+              </div>
+            </div>
+          `;
+        });
+      });
+
+      countEl.textContent = total;
+      list.innerHTML = total === 0
+        ? '<div class="loading-state" style="padding:24px;"><p>No comments yet</p></div>'
+        : html;
+    }
+
+    // ===========================================
+    // PROMPT OUTPUT
+    // ===========================================
+    function updatePrompt() {
+      const el = document.getElementById('promptContent');
+      let total = 0;
+      Object.values(state.comments).forEach(fc => total += Object.keys(fc).length);
+
+      if (total === 0) {
+        el.className = 'prompt-content empty';
+        el.textContent = 'Switch to Review mode and click on any line to add comments.';
+        return;
+      }
+
+      el.className = 'prompt-content';
+      el.textContent = generatePrompt('preview');
+    }
+
+    function generatePrompt(format) {
+      if (format === 'json') {
+        const output = { name: state.name, feedback: [] };
+        Object.keys(state.comments).forEach(fileId => {
+          const file = state.files.find(f => f.id === fileId);
+          Object.keys(state.comments[fileId]).forEach(lineNum => {
+            const c = state.comments[fileId][lineNum];
+            output.feedback.push({
+              file: file?.name || fileId,
+              line: parseInt(lineNum),
+              context: c.context,
+              comment: c.text
+            });
+          });
+        });
+        return JSON.stringify(output, null, 2);
+      }
+
+      // Markdown
+      let out = `## Feedback on ${state.name}\n\n`;
+      Object.keys(state.comments).forEach(fileId => {
+        const file = state.files.find(f => f.id === fileId);
+        const fc = state.comments[fileId];
+        if (Object.keys(fc).length > 0) {
+          out += `### ${file?.name || fileId}\n\n`;
+          Object.keys(fc).sort((a, b) => parseInt(a) - parseInt(b)).forEach(lineNum => {
+            const c = fc[lineNum];
+            const ctx = c.context.trim().slice(0, 50);
+            out += `**Line ${lineNum}:** \`${ctx}${c.context.length > 50 ? '...' : ''}\`\n`;
+            out += `→ ${c.text}\n\n`;
+          });
+        }
+      });
+      return out.trim();
+    }
+
+    function copyPrompt(format) {
+      navigator.clipboard.writeText(generatePrompt(format)).then(() => {
+        showToast(`Copied ${format === 'json' ? 'JSON' : 'Markdown'}!`);
+      });
+    }
+
+    // ===========================================
+    // UI CONTROLS
+    // ===========================================
+    function toggleDiff() {
+      state.showDiff = !state.showDiff;
+      document.getElementById('diffToggle').classList.toggle('active', state.showDiff);
+      renderDocument();
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      document.getElementById('commentsPanel').classList.toggle('collapsed', mode !== 'review');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function showLoadModal() {
+      document.getElementById('loadModal').style.display = 'flex';
+      document.getElementById('dataInput').focus();
+    }
+
+    function hideLoadModal() {
+      document.getElementById('loadModal').style.display = 'none';
+    }
+
+    function loadFromModal() {
+      try {
+        const data = JSON.parse(document.getElementById('dataInput').value);
+        window.loadSkillData(data);
+        hideLoadModal();
+      } catch (e) {
+        showToast('Invalid JSON: ' + e.message);
+      }
+    }
+
+    // ===========================================
+    // FOLDER PICKER (File System Access API)
+    // ===========================================
+    async function openFolder() {
+      try {
+        // Check if API is supported
+        if (!('showDirectoryPicker' in window)) {
+          showToast('Folder picker not supported in this browser. Use Chrome.');
+          return;
+        }
+
+        // Open folder picker
+        // Uses 'id' to remember last location (defaults to ~/.claude/skills after first use)
+        const dirHandle = await window.showDirectoryPicker({
+          id: 'claude-skills-folder',
+          mode: 'read'
+        });
+        const folderName = dirHandle.name;
+
+        showToast(`Reading ${folderName}...`);
+
+        // Read all files recursively
+        const files = await readDirectory(dirHandle, '');
+
+        // Filter to only include text-based files we can display
+        const textFiles = files.filter(f =>
+          f.name.endsWith('.md') ||
+          f.name.endsWith('.txt') ||
+          f.name.endsWith('.py') ||
+          f.name.endsWith('.js') ||
+          f.name.endsWith('.ts') ||
+          f.name.endsWith('.json') ||
+          f.name.endsWith('.yaml') ||
+          f.name.endsWith('.yml') ||
+          f.name.endsWith('.sh') ||
+          f.name.endsWith('.css') ||
+          f.name.endsWith('.html') ||
+          !f.name.includes('.')  // files without extension (like Makefile)
+        );
+
+        if (textFiles.length === 0) {
+          showToast('No readable files found in folder');
+          return;
+        }
+
+        // Load into viewer
+        window.loadSkillData({
+          name: folderName,
+          path: folderName,
+          files: textFiles.map(f => ({
+            id: f.path || f.name,
+            name: f.path || f.name,
+            content: f.content,
+            isNew: true
+          }))
+        });
+
+      } catch (e) {
+        if (e.name === 'AbortError') {
+          // User cancelled - do nothing
+          return;
+        }
+        console.error('Error opening folder:', e);
+        showToast('Error: ' + e.message);
+      }
+    }
+
+    async function readDirectory(dirHandle, path) {
+      const files = [];
+
+      for await (const entry of dirHandle.values()) {
+        const entryPath = path ? `${path}/${entry.name}` : entry.name;
+
+        if (entry.kind === 'file') {
+          try {
+            const file = await entry.getFile();
+            // Skip large files (> 1MB) and binary files
+            if (file.size > 1024 * 1024) continue;
+
+            const content = await file.text();
+            // Skip binary content (contains null bytes)
+            if (content.includes('\u0000')) continue;
+
+            files.push({
+              name: entry.name,
+              path: entryPath,
+              content: content
+            });
+          } catch (e) {
+            console.warn(`Could not read file ${entryPath}:`, e);
+          }
+        } else if (entry.kind === 'directory') {
+          // Skip hidden directories and common non-essential folders
+          if (entry.name.startsWith('.') ||
+              entry.name === 'node_modules' ||
+              entry.name === '__pycache__' ||
+              entry.name === 'venv' ||
+              entry.name === '.git') {
+            continue;
+          }
+          // Recursively read subdirectory
+          const subFiles = await readDirectory(entry, entryPath);
+          files.push(...subFiles);
+        }
+      }
+
+      return files;
+    }
+  </script>
+</body>
+</html>
