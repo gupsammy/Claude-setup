@@ -1,14 +1,14 @@
 ---
-name: search-conversations
-description: Search past Claude Code conversations. Use when user says "search conversations", "find that chat", "what did we discuss", "where did we talk about", "look up past session", "find conversation about X", "search history", "what did I ask about", "remember when we", "that discussion about". Also triggers on past-tense questions referencing prior work or possessives without context.
+name: memory-fetch
+description: Fetch past conversations. Triggers on "what did we discuss", "continue where we left off", "remember when", "as I mentioned", "you suggested", "we decided". Also triggers on implicit signals like past-tense references ("the bug we fixed"), possessives without context ("my project"), or assumptive questions ("do you remember").
 ---
 
-# search-conversations
+# memory-fetch
 
 ## Extraction
 
 ```bash
-python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py --days 3
+python3 ~/.claude/skills/memory-fetch/scripts/extract_conversations.py --days 3
 ```
 
 | Option | Effect |
@@ -32,7 +32,7 @@ python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py -
 
 2. **Extract recent context** using the script with lens-appropriate parameters:
    ```bash
-   python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py --days N [flags]
+   python3 ~/.claude/skills/memory-fetch/scripts/extract_conversations.py --days N [flags]
    ```
    Use the Parameters table to select `--days`, flags, and any supplementary data to gather.
 
@@ -40,15 +40,36 @@ python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py -
 
 4. **Deepen the search** using what you learned from the initial extraction:
    - Extract additional timeframes with the script (`--days 30`, `--all-projects`)
-   - Search for specific keywords, project names, or patterns that surfaced:
+   - Search for specific keywords or patterns that surfaced:
      ```bash
-     qmd search "keyword from context" -c conversations -n 15 --files
+     grep -l "keyword" ~/.claude/projects/*/*.jsonl
      ```
    - Extract those specific paths: `python3 ... --paths /found/conv.jsonl`
 
    This step surfaces older context, related discussions, or cross-project patterns that complement the initial extraction.
 
-**Keep index updated**: Run `qmd update` periodically to index new sessions.
+---
+
+## Query Construction
+
+When building grep queries from user requests, extract substantive keywords.
+
+**Include (high-confidence):**
+- Specific nouns: technologies, concepts, project names, proper nouns
+- Domain-specific terms: "OAuth", "SQL queries", "derivative"
+- Unique identifiers or unusual phrases
+
+**Exclude (low-confidence):**
+- Generic verbs: "discuss", "talk", "mention", "say"
+- Time markers: "yesterday", "last week", "recently"
+- Vague nouns: "thing", "stuff", "issue", "problem"
+- Meta-conversation: "conversation", "chat", "question"
+
+**Algorithm:**
+1. Extract substantive keywords from user request
+2. If 0 keywords → ask for clarification ("Which project specifically?")
+3. If 1+ specific terms → search with those terms
+4. If initial search returns nothing → try broader terms or longer timeframe
 
 ---
 
@@ -96,14 +117,14 @@ python3 ~/.claude/skills/search-conversations/scripts/extract_conversations.py -
 
 ### Supplementary Search Patterns
 
-When recent extraction doesn't surface enough, use these qmd queries to find specific sessions:
+When recent extraction doesn't surface enough, use grep to find specific sessions:
 
 | Lens | Query |
 |------|-------|
-| extract-learnings | `qmd search "learned realized understand clicked" -c conversations -n 15 --files` |
-| find-gaps | `qmd search "confused struggling help with don't understand" -c conversations -n 15 --files` |
-| extract-decisions | `qmd search "decided chose instead of trade-off because" -c conversations -n 15 --files` |
-| find-antipatterns | `qmd search "again same mistake repeated forgot" -c conversations -n 15 --files` |
+| extract-learnings | `grep -l -E "learned\|realized\|understand\|clicked" ~/.claude/projects/*/*.jsonl` |
+| find-gaps | `grep -l -E "confused\|struggling\|help with\|don't understand" ~/.claude/projects/*/*.jsonl` |
+| extract-decisions | `grep -l -E "decided\|chose\|instead of\|trade-off\|because" ~/.claude/projects/*/*.jsonl` |
+| find-antipatterns | `grep -l -E "again\|same mistake\|repeated\|forgot" ~/.claude/projects/*/*.jsonl` |
 
 ---
 
