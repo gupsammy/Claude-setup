@@ -48,3 +48,7 @@ session-corpus/
 
 # Task management (per-session todo lists)
 tasks/
+
+# Memory system (local database)
+memory/conversations.db
+memory/__pycache__/

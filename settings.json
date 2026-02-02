@@ -13,16 +13,6 @@
   },
   "model": "opus",
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/samarthgupta/.claude/hooks/session-context-loader.sh"
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "matcher": "*",
@@ -52,22 +42,17 @@
     "padding": 0.5
   },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": false,
-    "context7@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": true,
-    "figma@claude-plugins-official": false,
-    "pyright-lsp@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
     "huggingface-skills@claude-plugins-official": false,
-    "plugin-dev@claude-plugins-official": false,
+    "plugin-dev@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
-    "playground@claude-plugins-official": true
+    "playground@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "claude-memory@claudest": true
   },
   "forceLoginMethod": "claudeai",
   "syntaxHighlightingDisabled": false,
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": true,
+  "prefersReducedMotion": true
 }
