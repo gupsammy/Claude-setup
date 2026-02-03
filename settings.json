@@ -49,7 +49,9 @@
     "claude-code-setup@claude-plugins-official": true,
     "playground@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "claude-memory@claudest": true
+    "typescript-lsp@claude-plugins-official": true,
+    "claude-memory@claudest": true,
+    "claude-utilities@claudest": true
   },
   "forceLoginMethod": "claudeai",
   "syntaxHighlightingDisabled": false,
